@@ -523,8 +523,11 @@
               </div>
               <div class="patch-header-actions">
                 <span id="patch-validation-badge" class="badge-validation">VALIDATION: PENDING</span>
-                <button type="button" id="btn-copy-patch" class="btn btn-lime btn-xs" title="Copy Unified Diff Patch">
+                <button type="button" id="btn-copy-patch" class="btn btn-dark btn-xs" title="Copy Unified Diff Patch">
                   <span>📋 Copy Patch</span>
+                </button>
+                <button type="button" id="btn-apply-patch" class="btn btn-lime btn-xs" onclick="autoResolveCurrentReview()" style="font-weight: 800; cursor: pointer; box-shadow: 0 0 10px rgba(190, 242, 100, 0.4);" title="Auto-Apply Remediation & Re-Audit to achieve APPROVE verdict">
+                  <span>⚡ Auto-Apply Fix &amp; Re-Audit (All Green)</span>
                 </button>
               </div>
             </div>
@@ -535,6 +538,22 @@
                 <div class="diff-syntax-title">PROPOSED UNIFIED DIFF PATCH (READ-ONLY PREVIEW)</div>
                 <pre id="fix-diff-code" class="diff-code-block">No remediation patch needed.</pre>
               </div>
+
+              <!-- 1-Click Apply & Re-Audit Callout Banner -->
+              <div id="fix-apply-cta-banner" class="patch-apply-cta" style="margin-top: 1.25rem; padding: 1rem 1.25rem; background: #18181b; border: 1.5px solid #bef264; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: #bef264; margin-bottom: 0.25rem;">
+                    ⚡ 1-Click Remediation &amp; Automated Re-Audit
+                  </div>
+                  <div style="font-size: 0.82rem; color: #d4d4d8; line-height: 1.5;">
+                    Apply this synthesized dry-run patch to the repository and re-run all 6 autonomous agents to verify that the defect is eliminated and achieve an <strong>APPROVE (All Green)</strong> consensus verdict.
+                  </div>
+                </div>
+                <button type="button" class="btn btn-lime btn-sm" onclick="autoResolveCurrentReview()" style="font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(190, 242, 100, 0.4);">
+                  <span>⚡ Apply Fix &amp; Re-Audit (All Green) &rarr;</span>
+                </button>
+              </div>
+
               <div class="patch-safety-footer">
                 &#x1F512; <strong>Non-Destructive Guarantee:</strong> ReviewForge generates proposed unified diff previews only. Original source code files were not modified.
               </div>

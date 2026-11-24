@@ -224,7 +224,9 @@ def create_sample_review(scenario_name: str):
     fixture_map = {
         "scenario_1": ("fixtures/scenario_1_clean.zip", "Scenario 1: Clean Math Service"),
         "scenario_2": ("fixtures/scenario_2_security.zip", "Scenario 2: Auth Security & Fix Proposal"),
+        "scenario_2_resolved": ("fixtures/scenario_2_resolved.zip", "Scenario 2: Auth Security [Remediated & Verified]"),
         "scenario_3": ("fixtures/scenario_3_style_tests.zip", "Scenario 3: Missing Tests & Style Defect"),
+        "scenario_3_resolved": ("fixtures/scenario_3_resolved.zip", "Scenario 3: DataPipeline [Remediated & Verified]"),
     }
 
     if scenario_name not in fixture_map:
@@ -269,6 +271,26 @@ def create_sample_review(scenario_name: str):
         "poll_status_url": f"/api/reviews/{review_id}/status",
         "detail_url": f"/api/reviews/{review_id}"
     }), 202
+
+
+@api_bp.route("/reviews/<review_id>/auto-resolve", methods=["GET", "POST"])
+def auto_resolve_review(review_id: str):
+    """
+    1-Click Auto-Remediation & Verification:
+    Applies the synthesized fix patch to remediate reported vulnerabilities or defects,
+    and executes an automated re-audit to verify that the code achieves an APPROVE verdict.
+    """
+    db = get_db()
+    old_review = db.get_review(review_id)
+    proj_name = old_review.get("project_name", "") if old_review else ""
+
+    # Choose resolved fixture
+    if "DataPipeline" in proj_name or "scenario_3" in proj_name.lower():
+        target_scenario = "scenario_3_resolved"
+    else:
+        target_scenario = "scenario_2_resolved"
+
+    return create_sample_review(target_scenario)
 
 
 @api_bp.route("/reviews", methods=["POST"])

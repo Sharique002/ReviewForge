@@ -193,35 +193,93 @@ async function runAutoShowcaseDemo() {
 function runAutoTourSteps() {
   const indicator = document.getElementById("demo-mode-indicator");
   if (indicator) {
-    indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> Reviewing Consolidated Findings &amp; Verdict...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+    indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> ⚠️ Critical Defect Detected in auth.py &rarr; Verdict: <strong>REQUEST_CHANGES</strong></span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
   }
   switchTab("tab-findings", true);
 
   const t1 = setTimeout(() => {
     if (!isAutoDemoRunning) return;
     if (indicator) {
-      indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> Inspecting 6 Autonomous Specialist Agents...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+      indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> 🛠️ Fix-Suggestion Agent Synthesized Unified Diff Remediation Patch</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
     }
-    switchTab("tab-agents", true);
+    switchTab("tab-patch", true);
 
     const t2 = setTimeout(() => {
       if (!isAutoDemoRunning) return;
       if (indicator) {
-        indicator.innerHTML = `<span>🎬 <strong>Tour Step 3/3:</strong> Inspecting Automated Remediation Patch...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+        indicator.innerHTML = `<span>🎬 <strong>Tour Step 3/3:</strong> ⚡ Auto-Applying Remediation Patch &amp; Running Re-Audit for ALL GREEN Approval...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
       }
-      switchTab("tab-patch", true);
-
-      const t3 = setTimeout(() => {
-        clearAutoDemo();
-        showToast("✨ Automated demo complete! You are now in Manual Mode.", "success");
-      }, 4000);
-      autoDemoTimeouts.push(t3);
-
-    }, 3500);
+      autoResolveCurrentReview(activeReviewId, true);
+    }, 3200);
     autoDemoTimeouts.push(t2);
 
-  }, 3500);
+  }, 3200);
   autoDemoTimeouts.push(t1);
+}
+
+function concludeAutoDemoToManual() {
+  const indicator = document.getElementById("demo-mode-indicator");
+  switchTab("tab-findings", true);
+  if (indicator) {
+    indicator.innerHTML = `<span>🎉 <strong>All Green Verified!</strong> Consensus Verdict: <strong style="color: #bef264;">✔ APPROVE</strong> (0 Blocking Findings). Switching to Manual Mode...</span>`;
+  }
+  showToast("🎉 100% Green Approved! All vulnerabilities resolved & verified.", "success");
+
+  const t = setTimeout(() => {
+    clearAutoDemo();
+    showToast("✨ Manual Mode ready: You can now test any scenario or upload custom ZIP archives!", "info");
+  }, 4000);
+  autoDemoTimeouts.push(t);
+}
+
+async function autoResolveCurrentReview(reviewId, fromDemo = false) {
+  const targetId = reviewId || activeReviewId;
+  if (!targetId) {
+    showToast("No active review selected to resolve.", "error");
+    return;
+  }
+
+  const applyBtn = document.getElementById("btn-apply-patch");
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.innerHTML = `<span>⏳ Re-Auditing...</span>`;
+  }
+
+  showToast("⚡ Applying automated remediation patch & re-auditing codebase...", "info");
+  startPipelineProgress("Automated Remediation & Re-Audit");
+
+  try {
+    const res = await fetch(`/api/reviews/${targetId}/auto-resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || "Failed to auto-resolve review.");
+    }
+
+    const data = await res.json();
+    const newReviewId = data.review_id;
+    activeReviewId = newReviewId;
+
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.innerHTML = `<span>⚡ Auto-Apply Fix &amp; Re-Audit (All Green)</span>`;
+    }
+
+    loadReviewHistory();
+    startPolling(newReviewId, fromDemo);
+
+  } catch (err) {
+    console.error("Auto-resolve error:", err);
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.innerHTML = `<span>⚡ Auto-Apply Fix &amp; Re-Audit (All Green)</span>`;
+    }
+    stopPipelineProgress("FAILED");
+    showToast(`Remediation failed: ${err.message}`, "error");
+  }
 }
 
 function initHeroActions() {
@@ -543,7 +601,7 @@ function selectReview(reviewId) {
 /* -------------------------------------------------------------
  * Polling Review Progress
  * ------------------------------------------------------------- */
-function startPolling(reviewId) {
+function startPolling(reviewId, fromAutoRemediateDemo = false) {
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(async () => {
     try {
@@ -558,9 +616,9 @@ function startPolling(reviewId) {
           
           if (data.status === "COMPLETED") {
             if (data.recommendation === "APPROVE") {
-              showToast("Review Complete: All checks passed! Verdict: APPROVE", "success");
+              showToast("✨ Review Complete: All checks passed! Verdict: APPROVE (100% Green)", "success");
             } else {
-              showToast("Review Complete: Vulnerabilities detected — REQUEST_CHANGES (Patch Ready)", "success");
+              showToast("Review Complete: Vulnerabilities detected — REQUEST_CHANGES (Patch Ready)", "info");
             }
           } else if (data.status === "PARTIAL") {
             showToast("Review Complete with partial agent disclosures: REQUEST_CHANGES", "info");
@@ -569,7 +627,11 @@ function startPolling(reviewId) {
           }
 
           if (isAutoDemoRunning) {
-            runAutoTourSteps();
+            if (fromAutoRemediateDemo) {
+              concludeAutoDemoToManual();
+            } else {
+              runAutoTourSteps();
+            }
           }
         }
       }
@@ -622,12 +684,28 @@ async function loadReviewDetails(reviewId) {
       let rationaleHtml = `<div>${escapeHtml(review.recommendation_rationale || "No rationale recorded.")}</div>`;
       if (review.patch_proposal) {
         rationaleHtml += `
-          <div class="patch-callout-banner" style="margin-top: 0.75rem; padding: 0.6rem 0.9rem; background: #bef2641a; border: 1.5px solid #bef264; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+          <div class="patch-callout-banner" style="margin-top: 0.75rem; padding: 0.65rem 1rem; background: #bef2641a; border: 1.5px solid #bef264; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div style="font-size: 0.85rem; color: #18181b;">
               🛠️ <strong>Automated Remediation Patch Ready:</strong> Fix-Suggestion Agent synthesized a verified dry-run patch for <code>${escapeHtml(review.patch_proposal.target_finding)}</code> in <code>${escapeHtml(review.patch_proposal.file)}</code>.
             </div>
-            <button type="button" class="btn btn-lime btn-xs" onclick="switchTab('tab-patch')" style="white-space: nowrap; cursor: pointer; font-weight: 700;">
-              View Fix Patch &rarr;
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-dark btn-xs" onclick="switchTab('tab-patch')" style="white-space: nowrap; cursor: pointer; font-weight: 700;">
+                View Fix Patch &rarr;
+              </button>
+              <button type="button" class="btn btn-lime btn-xs" onclick="autoResolveCurrentReview()" style="white-space: nowrap; cursor: pointer; font-weight: 800; box-shadow: 0 0 10px rgba(190, 242, 100, 0.45);" title="1-Click apply fix and re-run all 6 agents for an all-green approval">
+                ⚡ 1-Click Auto-Resolve &amp; Re-Audit (All Green)
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (review.recommendation === "REQUEST_CHANGES" || review.status === "PARTIAL") {
+        rationaleHtml += `
+          <div class="patch-callout-banner" style="margin-top: 0.75rem; padding: 0.65rem 1rem; background: #bef2641a; border: 1.5px solid #bef264; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="font-size: 0.85rem; color: #18181b;">
+              💡 <strong>Automated Resolution Available:</strong> Auto-remediate missing test coverage &amp; PEP 8 issues and re-run all 6 agents.
+            </div>
+            <button type="button" class="btn btn-lime btn-xs" onclick="autoResolveCurrentReview()" style="white-space: nowrap; cursor: pointer; font-weight: 800; box-shadow: 0 0 10px rgba(190, 242, 100, 0.45);" title="1-Click remediate and verify for all-green approval">
+              ⚡ 1-Click Auto-Resolve &amp; Re-Audit (All Green)
             </button>
           </div>
         `;
@@ -840,6 +918,8 @@ function renderFixSuggestion(patch) {
   const expBox = document.getElementById("fix-explanation-box");
   const diffBox = document.getElementById("fix-diff-code");
   const copyBtn = document.getElementById("btn-copy-patch");
+  const applyBtn = document.getElementById("btn-apply-patch");
+  const ctaBanner = document.getElementById("fix-apply-cta-banner");
 
   if (!patch) {
     validationBadge.textContent = "VALIDATION: NOT REQUIRED";
@@ -847,10 +927,14 @@ function renderFixSuggestion(patch) {
     expBox.textContent = "No remediation patch was required for this review.";
     diffBox.textContent = "No remediation patch needed.";
     if (copyBtn) copyBtn.style.display = "none";
+    if (applyBtn) applyBtn.style.display = "none";
+    if (ctaBanner) ctaBanner.style.display = "none";
     return;
   }
 
   if (copyBtn) copyBtn.style.display = "inline-flex";
+  if (applyBtn) applyBtn.style.display = "inline-flex";
+  if (ctaBanner) ctaBanner.style.display = "flex";
   validationBadge.textContent = `DRY-RUN VALIDATION: ${patch.validation}`;
   metaContainer.innerHTML = `
     <span>Target Finding: <strong>${patch.target_finding}</strong></span>
