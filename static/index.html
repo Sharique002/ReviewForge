@@ -753,32 +753,38 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span class="badge-verdict verdict-approved" style="font-size: 0.85rem; padding: 4px 12px;">&#x2714; APPROVE</span>
+          <span id="modal-verdict-badge" class="badge-verdict verdict-approved" style="font-size: 0.85rem; padding: 4px 12px;">&#x2714; APPROVE</span>
           <h3 style="margin: 0; font-size: 1.15rem; color: #18181b;">Full Automated Review &amp; Verification Report</h3>
         </div>
-        <button type="button" class="btn-close" onclick="closeReportModal()">&times;</button>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" id="btn-toggle-report-view" class="btn btn-dark btn-xs" onclick="toggleReportView()" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">
+            <span>📝 Raw Markdown</span>
+          </button>
+          <button type="button" class="btn-close" onclick="closeReportModal()">&times;</button>
+        </div>
       </div>
       <div class="modal-body">
         <div class="report-summary-stats">
           <div class="report-stat-card">
             <span class="report-stat-title">VERDICT</span>
-            <span class="report-stat-val text-lime">APPROVE (100% Green)</span>
+            <span id="modal-stat-verdict" class="report-stat-val text-lime">APPROVE (100% Green)</span>
           </div>
           <div class="report-stat-card">
             <span class="report-stat-title">BLOCKING FINDINGS</span>
-            <span class="report-stat-val text-lime">0 Defects</span>
+            <span id="modal-stat-findings" class="report-stat-val text-lime">0 Defects</span>
           </div>
           <div class="report-stat-card">
             <span class="report-stat-title">AGENTS VERIFIED</span>
-            <span class="report-stat-val text-blue">6 / 6 Active</span>
+            <span id="modal-stat-agents" class="report-stat-val text-blue">6 / 6 Active</span>
           </div>
           <div class="report-stat-card">
             <span class="report-stat-title">REMEDIATION STATUS</span>
-            <span class="report-stat-val text-lime">Dry-Run Verified</span>
+            <span id="modal-stat-remediation" class="report-stat-val text-lime">Dry-Run Verified</span>
           </div>
         </div>
         <div class="report-markdown-preview">
-          <pre id="report-modal-content" class="report-markdown-pre">Loading verification report...</pre>
+          <div id="report-modal-rich-content" class="report-rich-container"></div>
+          <pre id="report-modal-content" class="report-markdown-pre" style="display: none;">Loading verification report...</pre>
         </div>
       </div>
       <div class="modal-footer">

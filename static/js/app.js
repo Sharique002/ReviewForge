@@ -152,30 +152,254 @@ async function downloadCurrentReport(reviewId) {
   }
 }
 
+function formatInlineMarkdown(text) {
+  if (!text) return "";
+  let s = escapeHtml(text);
+  // Bold: **text**
+  s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Inline code: `code`
+  s = s.replace(/`([^`]+)`/g, '<code class="inline-code" style="background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px; font-family:var(--font-mono); color:#bef264;">$1</code>');
+  // Severity tags
+  s = s.replace(/\[CRITICAL\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.7rem; font-weight:700;">CRITICAL</span>');
+  s = s.replace(/\[HIGH\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.7rem; font-weight:700;">HIGH</span>');
+  s = s.replace(/\[MEDIUM\]/g, '<span class="pill-badge pill-amber" style="font-size:0.7rem; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.15);">MEDIUM</span>');
+  s = s.replace(/\[LOW\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.7rem;">LOW</span>');
+  s = s.replace(/\[INFO\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.7rem;">INFO</span>');
+  return s;
+}
+
+function renderMarkdownReportToHtml(markdownText) {
+  if (!markdownText) return "<p>No report content available.</p>";
+
+  const lines = markdownText.split("\n");
+  const html = [];
+  let inCodeBlock = false;
+  let codeBlockLines = [];
+  let inTable = false;
+  let tableRows = [];
+
+  function flushCodeBlock() {
+    if (!inCodeBlock) return;
+    html.push(`<div class="report-code-block"><pre style="margin:0; font-family:var(--font-mono); font-size:0.8rem; line-height:1.6;">`);
+    for (const rawLine of codeBlockLines) {
+      let lineClass = "report-code-line";
+      if (rawLine.startsWith("- ") || (rawLine.startsWith("-") && !rawLine.startsWith("---"))) {
+        lineClass += " line-removed";
+      } else if (rawLine.startsWith("+ ") || (rawLine.startsWith("+") && !rawLine.startsWith("+++"))) {
+        lineClass += " line-added";
+      } else if (rawLine.startsWith("#")) {
+        lineClass += " line-comment";
+      } else if (rawLine.startsWith("@@")) {
+        lineClass += " line-hunk";
+      }
+      html.push(`<div class="${lineClass}">${escapeHtml(rawLine)}</div>`);
+    }
+    html.push(`</pre></div>`);
+    inCodeBlock = false;
+    codeBlockLines = [];
+  }
+
+  function flushTable() {
+    if (!inTable) return;
+    if (tableRows.length > 0) {
+      html.push(`<div style="overflow-x:auto;"><table class="report-table">`);
+      const headerCells = tableRows[0].map(c => `<th>${formatInlineMarkdown(c.trim())}</th>`).join("");
+      html.push(`<thead><tr>${headerCells}</tr></thead><tbody>`);
+      for (let i = 1; i < tableRows.length; i++) {
+        const rowCells = tableRows[i].map(c => `<td>${formatInlineMarkdown(c.trim())}</td>`).join("");
+        html.push(`<tr>${rowCells}</tr>`);
+      }
+      html.push(`</tbody></table></div>`);
+    }
+    inTable = false;
+    tableRows = [];
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.trim().startsWith("```")) {
+      if (inCodeBlock) {
+        flushCodeBlock();
+      } else {
+        flushTable();
+        inCodeBlock = true;
+        codeBlockLines = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      continue;
+    }
+
+    if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
+      if (/^\|[\s\-:|]+\|$/.test(line.trim())) {
+        continue;
+      }
+      inTable = true;
+      const cells = line.trim().slice(1, -1).split("|");
+      tableRows.push(cells);
+      continue;
+    } else {
+      flushTable();
+    }
+
+    if (!line.trim()) continue;
+
+    if (line.startsWith("# ")) {
+      html.push(`<div class="report-header-banner" style="background:#18181b; border:1px solid #27272a; padding:0.75rem 1rem; border-radius:8px; margin-bottom:0.75rem;"><h2 style="margin:0 0 0.3rem 0; font-size:1.15rem; color:#ffffff;">${escapeHtml(line.slice(2))}</h2></div>`);
+    } else if (line.startsWith("## ")) {
+      html.push(`<h3 style="margin:1rem 0 0.4rem 0; font-size:1.02rem; color:#bef264; border-bottom:1px solid #27272a; padding-bottom:4px;">${escapeHtml(line.slice(3))}</h3>`);
+    } else if (line.startsWith("### ")) {
+      html.push(`<h4 style="margin:0.8rem 0 0.3rem 0; font-size:0.92rem; color:#fda4af;">${escapeHtml(line.slice(4))}</h4>`);
+    } else if (line.startsWith("> ")) {
+      html.push(`<blockquote style="margin:0.4rem 0; padding:0.6rem 1rem; border-left:3px solid #bef264; background:rgba(190, 242, 100, 0.08); border-radius:0 6px 6px 0; color:#d4d4d8; font-style:italic;">${formatInlineMarkdown(line.slice(2))}</blockquote>`);
+    } else if (line.startsWith("- ")) {
+      html.push(`<div style="margin:0.2rem 0 0.2rem 0.5rem; display:flex; align-items:flex-start; gap:0.5rem;"><span style="color:#bef264;">&bull;</span> <span>${formatInlineMarkdown(line.slice(2))}</span></div>`);
+    } else {
+      html.push(`<p style="margin:0.35rem 0; color:#e4e4e7;">${formatInlineMarkdown(line)}</p>`);
+    }
+  }
+
+  flushCodeBlock();
+  flushTable();
+
+  return html.join("\n");
+}
+
+let isRawReportView = false;
+function toggleReportView() {
+  const richEl = document.getElementById("report-modal-rich-content");
+  const rawEl = document.getElementById("report-modal-content");
+  const btn = document.getElementById("btn-toggle-report-view");
+  if (!richEl || !rawEl || !btn) return;
+
+  isRawReportView = !isRawReportView;
+  if (isRawReportView) {
+    richEl.style.display = "none";
+    rawEl.style.display = "block";
+    btn.innerHTML = `<span>✨ Formatted View</span>`;
+  } else {
+    richEl.style.display = "block";
+    rawEl.style.display = "none";
+    btn.innerHTML = `<span>📝 Raw Markdown</span>`;
+  }
+}
+
+function updateModalHeaderAndStats(review) {
+  const badge = document.getElementById("modal-verdict-badge");
+  const statVerdict = document.getElementById("modal-stat-verdict");
+  const statFindings = document.getElementById("modal-stat-findings");
+  const statAgents = document.getElementById("modal-stat-agents");
+  const statRemediation = document.getElementById("modal-stat-remediation");
+
+  const rec = review.recommendation || "PENDING";
+  const findings = review.findings || [];
+  const blocking = findings.filter(f => ["CRITICAL", "HIGH", "MEDIUM"].includes(f.severity));
+  const patch = review.patch_proposal;
+
+  if (badge) {
+    if (rec === "APPROVE") {
+      badge.className = "badge-verdict verdict-approved";
+      badge.textContent = "✔ APPROVE";
+      badge.style.background = "#bef264";
+      badge.style.color = "#000000";
+    } else if (rec === "REQUEST_CHANGES") {
+      badge.className = "badge-verdict verdict-changes";
+      badge.textContent = "⚠ REQUEST_CHANGES";
+      badge.style.background = "#f43f5e";
+      badge.style.color = "#ffffff";
+    } else {
+      badge.className = "badge-verdict";
+      badge.textContent = rec;
+      badge.style.background = "#71717a";
+      badge.style.color = "#ffffff";
+    }
+  }
+
+  if (statVerdict) {
+    if (rec === "APPROVE") {
+      statVerdict.className = "report-stat-val text-lime";
+      statVerdict.textContent = "APPROVE (100% Green)";
+    } else if (rec === "REQUEST_CHANGES") {
+      statVerdict.className = "report-stat-val text-crimson";
+      statVerdict.textContent = "REQUEST_CHANGES";
+    } else {
+      statVerdict.className = "report-stat-val";
+      statVerdict.textContent = rec;
+    }
+  }
+
+  if (statFindings) {
+    if (blocking.length === 0) {
+      statFindings.className = "report-stat-val text-lime";
+      statFindings.textContent = "0 Defects (Clean)";
+    } else {
+      statFindings.className = "report-stat-val text-crimson";
+      statFindings.textContent = `${blocking.length} Blocking ${blocking.length === 1 ? 'Defect' : 'Defects'}`;
+    }
+  }
+
+  if (statAgents) {
+    statAgents.textContent = "6 / 6 Active";
+  }
+
+  if (statRemediation) {
+    if (patch) {
+      statRemediation.className = "report-stat-val text-lime";
+      statRemediation.textContent = patch.validation === "PASSED" ? "Dry-Run Verified" : "Patch Ready";
+    } else if (rec === "APPROVE") {
+      statRemediation.className = "report-stat-val text-lime";
+      statRemediation.textContent = "Verified Safe (Clean)";
+    } else {
+      statRemediation.className = "report-stat-val text-amber";
+      statRemediation.textContent = "Manual Review";
+    }
+  }
+}
+
 async function openReportModal(reviewId) {
   const targetId = reviewId || activeReviewId;
   if (!targetId) {
     showToast("Select a review to view its report.", "info");
     return;
   }
+  activeReviewId = targetId;
 
   const modal = document.getElementById("report-modal");
   const contentEl = document.getElementById("report-modal-content");
-  if (!modal || !contentEl) return;
+  const richContentEl = document.getElementById("report-modal-rich-content");
+  if (!modal) return;
 
-  contentEl.textContent = "Loading official multi-agent verification report from server...";
   modal.style.display = "flex";
+  if (contentEl) contentEl.textContent = "Loading official multi-agent verification report from server...";
+  if (richContentEl) richContentEl.innerHTML = `<div style="padding:1.5rem; text-align:center; color:#a1a1aa;">⏳ Loading official multi-agent verification report from server...</div>`;
 
   try {
-    const res = await fetch(`/api/reviews/${targetId}/report`);
-    if (res.ok) {
-      const data = await res.json();
-      contentEl.textContent = data.markdown_report || "No report content generated.";
+    const [reportRes, revRes] = await Promise.all([
+      fetch(`/api/reviews/${targetId}/report`),
+      fetch(`/api/reviews/${targetId}`)
+    ]);
+
+    if (revRes.ok) {
+      const review = await revRes.json();
+      updateModalHeaderAndStats(review);
+    }
+
+    if (reportRes.ok) {
+      const data = await reportRes.json();
+      const markdown = data.markdown_report || "# Review Report\n\nNo report content generated.";
+      if (contentEl) contentEl.textContent = markdown;
+      if (richContentEl) richContentEl.innerHTML = renderMarkdownReportToHtml(markdown);
     } else {
-      contentEl.textContent = "Unable to load report from server.";
+      if (contentEl) contentEl.textContent = "Unable to load report from server.";
+      if (richContentEl) richContentEl.innerHTML = `<div style="color:#f43f5e; padding:1rem;">⚠️ Unable to load report from server.</div>`;
     }
   } catch (e) {
-    contentEl.textContent = `Error loading report: ${e.message}`;
+    if (contentEl) contentEl.textContent = `Error loading report: ${e.message}`;
+    if (richContentEl) richContentEl.innerHTML = `<div style="color:#f43f5e; padding:1rem;">⚠️ Error loading report: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -183,6 +407,19 @@ function closeReportModal() {
   const modal = document.getElementById("report-modal");
   if (modal) modal.style.display = "none";
 }
+
+// Global modal close handlers
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeReportModal();
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const modalEl = document.getElementById("report-modal");
+  if (modalEl) {
+    modalEl.addEventListener("click", (e) => {
+      if (e.target === modalEl) closeReportModal();
+    });
+  }
+});
 
 /* -------------------------------------------------------------
  * Automated Demo Tour & Hero Actions
@@ -298,7 +535,7 @@ function concludeAutoDemoToManual() {
     // Automatically open the full official verification report!
     openReportModal(activeReviewId);
     showToast("📋 Official Complete Verification Report opened. Download or close to explore Manual Mode.", "info");
-  }, 4000);
+  }, 1200);
   autoDemoTimeouts.push(t);
 }
 
@@ -764,6 +1001,13 @@ function startPolling(reviewId, fromAutoRemediateDemo = false) {
             } else {
               runAutoTourSteps();
             }
+          } else {
+            // IN MANUAL MODE, CUSTOM ZIP UPLOAD, OR MANUAL 1-CLICK AUTO-RESOLVE:
+            // Automatically open the full report modal with defect code highlights!
+            setTimeout(() => {
+              openReportModal(reviewId);
+              showToast("📋 Official Complete Verification Report opened. Download or close to explore Manual Mode.", "info");
+            }, 1200);
           }
         }
       }
