@@ -206,6 +206,8 @@ def download_sample_zip(scenario_name: str):
         "scenario_1": "fixtures/scenario_1_clean.zip",
         "scenario_2": "fixtures/scenario_2_security.zip",
         "scenario_3": "fixtures/scenario_3_style_tests.zip",
+        "payment_gateway": "fixtures/realworld_payment_gateway.zip",
+        "user_auth": "fixtures/realworld_auth_service.zip",
     }
     if scenario_name not in fixture_map:
         return jsonify({"error": "Bad Request", "message": f"Unknown scenario: {scenario_name}"}), 400
@@ -227,6 +229,8 @@ def create_sample_review(scenario_name: str):
         "scenario_2_resolved": ("fixtures/scenario_2_resolved.zip", "Scenario 2: Auth Security [Remediated & Verified]"),
         "scenario_3": ("fixtures/scenario_3_style_tests.zip", "Scenario 3: Missing Tests & Style Defect"),
         "scenario_3_resolved": ("fixtures/scenario_3_resolved.zip", "Scenario 3: DataPipeline [Remediated & Verified]"),
+        "payment_gateway": ("fixtures/realworld_payment_gateway.zip", "E-Commerce Payment Gateway [Real Data]"),
+        "user_auth": ("fixtures/realworld_auth_service.zip", "User Auth & Token Service [Real Data]"),
     }
 
     if scenario_name not in fixture_map:

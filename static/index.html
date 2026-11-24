@@ -374,6 +374,38 @@
                 <span>Start Multi-Agent Review</span>
               </button>
             </form>
+
+            <!-- Real-World Test ZIP Download Helper -->
+            <div class="realworld-samples-box" style="margin-top: 1rem; padding: 0.85rem 1rem; background: #fafafa; border: 1.5px solid #e4e4e7; border-radius: 8px;">
+              <div style="font-size: 0.78rem; font-weight: 800; color: #18181b; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>🌐 REAL-WORLD DATA TEST SAMPLES:</span>
+                <span class="pill-badge pill-zinc" style="font-size: 0.65rem;">Ready to Drop</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.76rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>💳 <strong>PaymentGateway.zip</strong> (Stripe / HMAC)</span>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <button type="button" class="btn btn-dark btn-xs" onclick="quickFillSampleArchive('payment_gateway')" style="font-size: 0.68rem; padding: 1px 6px;">
+                      ⚡ Fill
+                    </button>
+                    <a href="/api/samples/payment_gateway/download" download="RealWorld_PaymentGateway.zip" class="helper-link" style="font-weight: 700;">
+                      📥 Download
+                    </a>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>🔐 <strong>UserAuth_Defect.zip</strong> (JWT / RCE Defect)</span>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <button type="button" class="btn btn-dark btn-xs" onclick="quickFillSampleArchive('user_auth')" style="font-size: 0.68rem; padding: 1px 6px;">
+                      ⚡ Fill
+                    </button>
+                    <a href="/api/samples/user_auth/download" download="RealWorld_UserAuth_SecurityDefect.zip" class="helper-link" style="font-weight: 700; color: #e11d48;">
+                      📥 Download
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

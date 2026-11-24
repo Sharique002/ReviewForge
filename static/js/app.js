@@ -552,31 +552,32 @@ function clearSelectedUploadFile(e) {
   if (textEl) textEl.textContent = "";
 }
 
-async function quickFillSampleArchive() {
+async function quickFillSampleArchive(sampleKey = "payment_gateway") {
   const fileInput = document.getElementById("file-input");
   const projInput = document.getElementById("project-name-input");
   const errorBox = document.getElementById("upload-error-msg");
   if (errorBox) errorBox.style.display = "none";
 
-  showToast("Loading sample archive into custom upload form...", "info");
+  showToast(`Loading '${sampleKey}' archive into custom upload form...`, "info");
 
   try {
-    const res = await fetch("/api/samples/scenario_1/download");
+    const res = await fetch(`/api/samples/${sampleKey}/download`);
     if (!res.ok) throw new Error("Failed to load sample ZIP.");
     const blob = await res.blob();
-    const file = new File([blob], "custom_sample_project.zip", { type: "application/zip" });
+    const filename = sampleKey === "user_auth" ? "RealWorld_UserAuth_SecurityDefect.zip" : "RealWorld_PaymentGateway.zip";
+    const file = new File([blob], filename, { type: "application/zip" });
 
     // Set file input files using DataTransfer
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
     fileInput.files = dataTransfer.files;
 
-    if (projInput && !projInput.value.trim()) {
-      projInput.value = "CustomSampleService";
+    if (projInput) {
+      projInput.value = sampleKey === "user_auth" ? "UserAuthTokenService" : "ECommercePaymentGateway";
     }
 
     updateFileLabel(file.name, file.size);
-    showToast("Sample archive loaded! Click 'Start Multi-Agent Review' to test upload.", "success");
+    showToast(`Real-world archive '${file.name}' loaded! Click 'Start Multi-Agent Review' to test upload.`, "success");
   } catch (err) {
     showToast("Error loading sample archive: " + err.message, "error");
   }
