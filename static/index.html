@@ -344,19 +344,27 @@
 
               <div class="form-group">
                 <div class="label-with-action">
-                  <label>Snapshot Archive (.zip)</label>
-                  <a href="/api/samples/scenario_1/download" class="helper-link" download title="Download a sample ZIP containing base/ and proposed/ snapshots">
-                    📥 Download Sample ZIP
-                  </a>
+                  <label for="file-input">Snapshot Archive (.zip)</label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" class="btn btn-dark btn-xs" onclick="quickFillSampleArchive()" style="font-size: 0.72rem; padding: 2px 8px; cursor: pointer;" title="Pre-fill a valid sample ZIP to test upload immediately">
+                      ⚡ Quick-Fill Sample
+                    </button>
+                    <a href="/api/samples/scenario_1/download" class="helper-link" download title="Download a sample ZIP containing base/ and proposed/ snapshots">
+                      📥 Download ZIP
+                    </a>
+                  </div>
                 </div>
                 <div id="drop-zone" class="drop-zone">
                   <input type="file" id="file-input" accept=".zip" class="file-input-hidden">
                   <div class="drop-icon">📦</div>
                   <div class="drop-zone-text">Drag &amp; drop <code>.zip</code> or <span class="browse-link">browse</span></div>
-                  <div id="selected-filename" class="selected-file-label"></div>
+                  <div id="selected-filename" class="selected-file-label" style="display: none; margin-top: 0.5rem; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span id="selected-filename-text" style="font-weight: 700; color: #16a34a;"></span>
+                    <button type="button" onclick="clearSelectedUploadFile(event)" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer; padding: 2px 6px; font-size: 1rem;" title="Remove selected file">&times;</button>
+                  </div>
                 </div>
-                <div class="contract-note">
-                  Structure: Must contain <code>base/</code> and <code>proposed/</code> source folders.
+                <div class="contract-note" style="margin-top: 0.6rem; font-size: 0.76rem; color: #52525b; line-height: 1.5;">
+                  <strong>Required Structure:</strong> Archive must contain <code>base/</code> (original code) and <code>proposed/</code> (changed code) folders.
                 </div>
               </div>
 

@@ -486,11 +486,11 @@ async function loadSampleScenario(scenarioKey) {
 function initDropZone() {
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("file-input");
-  const fileLabel = document.getElementById("selected-filename");
 
   ["dragenter", "dragover"].forEach(event => {
     dropZone.addEventListener(event, (e) => {
       e.preventDefault();
+      e.stopPropagation();
       dropZone.classList.add("dragover");
     });
   });
@@ -498,26 +498,87 @@ function initDropZone() {
   ["dragleave", "drop"].forEach(event => {
     dropZone.addEventListener(event, (e) => {
       e.preventDefault();
+      e.stopPropagation();
       dropZone.classList.remove("dragover");
     });
   });
 
   dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       fileInput.files = e.dataTransfer.files;
-      updateFileLabel(fileInput.files[0].name);
+      const file = fileInput.files[0];
+      updateFileLabel(file.name, file.size);
     }
   });
 
   fileInput.addEventListener("change", () => {
     if (fileInput.files && fileInput.files.length > 0) {
-      updateFileLabel(fileInput.files[0].name);
+      const file = fileInput.files[0];
+      updateFileLabel(file.name, file.size);
     }
   });
+}
 
-  function updateFileLabel(name) {
-    fileLabel.textContent = `Selected: ${name}`;
-    fileLabel.style.display = "block";
+function updateFileLabel(name, size) {
+  const fileLabel = document.getElementById("selected-filename");
+  const textEl = document.getElementById("selected-filename-text");
+  const projInput = document.getElementById("project-name-input");
+
+  const sizeStr = size ? ` (${(size / 1024).toFixed(1)} KB)` : "";
+  if (textEl) {
+    textEl.textContent = `✔ Selected: ${name}${sizeStr}`;
+  } else if (fileLabel) {
+    fileLabel.textContent = `✔ Selected: ${name}${sizeStr}`;
+  }
+  if (fileLabel) fileLabel.style.display = "flex";
+
+  if (projInput && !projInput.value.trim()) {
+    projInput.value = name.replace(/\.[^/.]+$/, "");
+  }
+}
+
+function clearSelectedUploadFile(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const fileInput = document.getElementById("file-input");
+  const fileLabel = document.getElementById("selected-filename");
+  const textEl = document.getElementById("selected-filename-text");
+  if (fileInput) fileInput.value = "";
+  if (fileLabel) fileLabel.style.display = "none";
+  if (textEl) textEl.textContent = "";
+}
+
+async function quickFillSampleArchive() {
+  const fileInput = document.getElementById("file-input");
+  const projInput = document.getElementById("project-name-input");
+  const errorBox = document.getElementById("upload-error-msg");
+  if (errorBox) errorBox.style.display = "none";
+
+  showToast("Loading sample archive into custom upload form...", "info");
+
+  try {
+    const res = await fetch("/api/samples/scenario_1/download");
+    if (!res.ok) throw new Error("Failed to load sample ZIP.");
+    const blob = await res.blob();
+    const file = new File([blob], "custom_sample_project.zip", { type: "application/zip" });
+
+    // Set file input files using DataTransfer
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    fileInput.files = dataTransfer.files;
+
+    if (projInput && !projInput.value.trim()) {
+      projInput.value = "CustomSampleService";
+    }
+
+    updateFileLabel(file.name, file.size);
+    showToast("Sample archive loaded! Click 'Start Multi-Agent Review' to test upload.", "success");
+  } catch (err) {
+    showToast("Error loading sample archive: " + err.message, "error");
   }
 }
 
