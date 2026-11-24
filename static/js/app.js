@@ -110,37 +110,77 @@ function initActionButtons() {
   // Download Report Button
   const downloadReportBtn = document.getElementById("btn-download-report");
   if (downloadReportBtn) {
-    downloadReportBtn.addEventListener("click", async () => {
-      if (!activeReviewId) {
-        showToast("Select a review to download its report.", "info");
-        return;
-      }
-      try {
-        const res = await fetch(`/api/reviews/${activeReviewId}/report`);
-        if (!res.ok) {
-          showToast("Failed to fetch report from server.", "error");
-          return;
-        }
-        const data = await res.json();
-        const markdown = data.markdown_report || "# Review Report\n\nNo content available.";
-        
-        // Trigger client-side file download
-        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `ReviewForge-Report-${activeReviewId}.md`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        showToast(`Report downloaded: ReviewForge-Report-${activeReviewId}.md`, "success");
-      } catch (err) {
-        showToast("Network error downloading report: " + err.message, "error");
-      }
+    downloadReportBtn.addEventListener("click", () => {
+      downloadCurrentReport(activeReviewId);
     });
   }
+}
+
+/* -------------------------------------------------------------
+ * Verification Report Modal & Download Handlers
+ * ------------------------------------------------------------- */
+async function downloadCurrentReport(reviewId) {
+  const targetId = reviewId || activeReviewId;
+  if (!targetId) {
+    showToast("Select a review to download its report.", "info");
+    return;
+  }
+  try {
+    const res = await fetch(`/api/reviews/${targetId}/report`);
+    if (!res.ok) {
+      showToast("Failed to fetch report from server.", "error");
+      return;
+    }
+    const data = await res.json();
+    const markdown = data.markdown_report || "# Review Report\n\nNo content available.";
+    
+    // Trigger client-side file download
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ReviewForge-Report-${targetId}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Report downloaded: ReviewForge-Report-${targetId}.md`, "success");
+  } catch (err) {
+    showToast("Network error downloading report: " + err.message, "error");
+  }
+}
+
+async function openReportModal(reviewId) {
+  const targetId = reviewId || activeReviewId;
+  if (!targetId) {
+    showToast("Select a review to view its report.", "info");
+    return;
+  }
+
+  const modal = document.getElementById("report-modal");
+  const contentEl = document.getElementById("report-modal-content");
+  if (!modal || !contentEl) return;
+
+  contentEl.textContent = "Loading official multi-agent verification report from server...";
+  modal.style.display = "flex";
+
+  try {
+    const res = await fetch(`/api/reviews/${targetId}/report`);
+    if (res.ok) {
+      const data = await res.json();
+      contentEl.textContent = data.markdown_report || "No report content generated.";
+    } else {
+      contentEl.textContent = "Unable to load report from server.";
+    }
+  } catch (e) {
+    contentEl.textContent = `Error loading report: ${e.message}`;
+  }
+}
+
+function closeReportModal() {
+  const modal = document.getElementById("report-modal");
+  if (modal) modal.style.display = "none";
 }
 
 /* -------------------------------------------------------------
@@ -151,14 +191,17 @@ let autoDemoTimeouts = [];
 
 function clearAutoDemo() {
   isAutoDemoRunning = false;
-  autoDemoTimeouts.forEach(t => clearTimeout(t));
+  autoDemoTimeouts.forEach(t => {
+    clearTimeout(t);
+    clearInterval(t);
+  });
   autoDemoTimeouts = [];
   const indicator = document.getElementById("demo-mode-indicator");
   if (indicator) {
     indicator.innerHTML = `<span>🛠️ <strong>Manual Mode Active</strong> — Interactive control enabled</span>`;
     setTimeout(() => {
       if (!isAutoDemoRunning && indicator) indicator.style.display = "none";
-    }, 4000);
+    }, 4500);
   }
 }
 
@@ -182,7 +225,7 @@ async function runAutoShowcaseDemo() {
     const header = document.querySelector(".section-header");
     if (header) header.appendChild(indicator);
   }
-  indicator.innerHTML = `<span>🎬 <strong>Automated Demo Active</strong> — Running pipeline &amp; touring features...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+  indicator.innerHTML = `<span>🎬 <span class="pulse-indicator"></span> <strong>Automated Demo Active</strong> — Running pipeline for Scenario 2 (Auth Security)...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
   indicator.style.display = "inline-flex";
 
   showToast("🎬 Starting automated hands-free demo tour...", "info");
@@ -192,17 +235,41 @@ async function runAutoShowcaseDemo() {
 
 function runAutoTourSteps() {
   const indicator = document.getElementById("demo-mode-indicator");
+  let step1Secs = 5;
   if (indicator) {
-    indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> ⚠️ Critical Defect Detected in auth.py &rarr; Verdict: <strong>REQUEST_CHANGES</strong></span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+    indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> ⚠️ Critical Defect Detected in <code>auth.py</code> &bull; Verdict: <strong style="color: #f43f5e;">REQUEST_CHANGES</strong> (Inspecting fix patch in ${step1Secs}s...)</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
   }
   switchTab("tab-findings", true);
 
+  const countdown1 = setInterval(() => {
+    if (!isAutoDemoRunning) { clearInterval(countdown1); return; }
+    step1Secs--;
+    if (step1Secs > 0 && indicator) {
+      indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> ⚠️ Critical Defect Detected in <code>auth.py</code> &bull; Verdict: <strong style="color: #f43f5e;">REQUEST_CHANGES</strong> (Inspecting fix patch in ${step1Secs}s...)</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+    } else {
+      clearInterval(countdown1);
+    }
+  }, 1000);
+  autoDemoTimeouts.push(countdown1);
+
   const t1 = setTimeout(() => {
     if (!isAutoDemoRunning) return;
+    let step2Secs = 5;
     if (indicator) {
-      indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> 🛠️ Fix-Suggestion Agent Synthesized Unified Diff Remediation Patch</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+      indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> 🛠️ Fix-Suggestion Agent Synthesized Unified Diff Remediation Patch (Auto-applying in ${step2Secs}s...)</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
     }
     switchTab("tab-patch", true);
+
+    const countdown2 = setInterval(() => {
+      if (!isAutoDemoRunning) { clearInterval(countdown2); return; }
+      step2Secs--;
+      if (step2Secs > 0 && indicator) {
+        indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> 🛠️ Fix-Suggestion Agent Synthesized Unified Diff Remediation Patch (Auto-applying in ${step2Secs}s...)</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+      } else {
+        clearInterval(countdown2);
+      }
+    }, 1000);
+    autoDemoTimeouts.push(countdown2);
 
     const t2 = setTimeout(() => {
       if (!isAutoDemoRunning) return;
@@ -210,10 +277,10 @@ function runAutoTourSteps() {
         indicator.innerHTML = `<span>🎬 <strong>Tour Step 3/3:</strong> ⚡ Auto-Applying Remediation Patch &amp; Running Re-Audit for ALL GREEN Approval...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
       }
       autoResolveCurrentReview(activeReviewId, true);
-    }, 3200);
+    }, 5500);
     autoDemoTimeouts.push(t2);
 
-  }, 3200);
+  }, 5500);
   autoDemoTimeouts.push(t1);
 }
 
@@ -221,13 +288,15 @@ function concludeAutoDemoToManual() {
   const indicator = document.getElementById("demo-mode-indicator");
   switchTab("tab-findings", true);
   if (indicator) {
-    indicator.innerHTML = `<span>🎉 <strong>All Green Verified!</strong> Consensus Verdict: <strong style="color: #bef264;">✔ APPROVE</strong> (0 Blocking Findings). Switching to Manual Mode...</span>`;
+    indicator.innerHTML = `<span>🎉 <strong>All Green Verified!</strong> Consensus Verdict: <strong style="color: #bef264;">✔ APPROVE</strong> &bull; Complete Report Opening...</span>`;
   }
   showToast("🎉 100% Green Approved! All vulnerabilities resolved & verified.", "success");
 
   const t = setTimeout(() => {
     clearAutoDemo();
-    showToast("✨ Manual Mode ready: You can now test any scenario or upload custom ZIP archives!", "info");
+    // Automatically open the full official verification report!
+    openReportModal(activeReviewId);
+    showToast("📋 Official Complete Verification Report opened. Download or close to explore Manual Mode.", "info");
   }, 4000);
   autoDemoTimeouts.push(t);
 }
