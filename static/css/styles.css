@@ -1882,6 +1882,22 @@ body {
 .toast-success { border-color: var(--lime-400); }
 .toast-error { border-color: var(--crimson-500); }
 
+/* Automated Demo Tour Styles */
+.demo-mode-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--bg-zinc-950);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1.5px solid var(--lime-400);
+  box-shadow: 0 4px 14px rgba(190, 242, 100, 0.25);
+  margin-top: 0.75rem;
+  animation: fadeIn 0.3s ease;
+}
+
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }

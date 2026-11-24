@@ -46,7 +46,11 @@ function initTabs() {
   });
 }
 
-function switchTab(targetId) {
+function switchTab(targetId, fromAutoTour = false) {
+  if (!fromAutoTour && isAutoDemoRunning) {
+    clearAutoDemo();
+    showToast("Switched to Manual Mode", "info");
+  }
   // Update button classes
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-tab") === targetId);
@@ -140,14 +144,91 @@ function initActionButtons() {
 }
 
 /* -------------------------------------------------------------
- * Hero Actions & Quick Demos
+ * Automated Demo Tour & Hero Actions
  * ------------------------------------------------------------- */
+let isAutoDemoRunning = false;
+let autoDemoTimeouts = [];
+
+function clearAutoDemo() {
+  isAutoDemoRunning = false;
+  autoDemoTimeouts.forEach(t => clearTimeout(t));
+  autoDemoTimeouts = [];
+  const indicator = document.getElementById("demo-mode-indicator");
+  if (indicator) {
+    indicator.innerHTML = `<span>🛠️ <strong>Manual Mode Active</strong> — Interactive control enabled</span>`;
+    setTimeout(() => {
+      if (!isAutoDemoRunning && indicator) indicator.style.display = "none";
+    }, 4000);
+  }
+}
+
+function exitAutoDemoToManual() {
+  clearAutoDemo();
+  showToast("Switched to Manual Mode", "info");
+}
+
+async function runAutoShowcaseDemo() {
+  clearAutoDemo();
+  isAutoDemoRunning = true;
+
+  const consoleEl = document.getElementById("console-section");
+  if (consoleEl) consoleEl.scrollIntoView({ behavior: "smooth" });
+
+  let indicator = document.getElementById("demo-mode-indicator");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.id = "demo-mode-indicator";
+    indicator.className = "demo-mode-pill-badge";
+    const header = document.querySelector(".section-header");
+    if (header) header.appendChild(indicator);
+  }
+  indicator.innerHTML = `<span>🎬 <strong>Automated Demo Active</strong> — Running pipeline &amp; touring features...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+  indicator.style.display = "inline-flex";
+
+  showToast("🎬 Starting automated hands-free demo tour...", "info");
+
+  await loadSampleScenario("scenario_2");
+}
+
+function runAutoTourSteps() {
+  const indicator = document.getElementById("demo-mode-indicator");
+  if (indicator) {
+    indicator.innerHTML = `<span>🎬 <strong>Tour Step 1/3:</strong> Reviewing Consolidated Findings &amp; Verdict...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+  }
+  switchTab("tab-findings", true);
+
+  const t1 = setTimeout(() => {
+    if (!isAutoDemoRunning) return;
+    if (indicator) {
+      indicator.innerHTML = `<span>🎬 <strong>Tour Step 2/3:</strong> Inspecting 6 Autonomous Specialist Agents...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+    }
+    switchTab("tab-agents", true);
+
+    const t2 = setTimeout(() => {
+      if (!isAutoDemoRunning) return;
+      if (indicator) {
+        indicator.innerHTML = `<span>🎬 <strong>Tour Step 3/3:</strong> Inspecting Automated Remediation Patch...</span> <button type="button" class="btn btn-dark btn-xs" onclick="exitAutoDemoToManual()" style="margin-left: 0.8rem; cursor: pointer; border-radius: 9999px;">Switch to Manual Mode</button>`;
+      }
+      switchTab("tab-patch", true);
+
+      const t3 = setTimeout(() => {
+        clearAutoDemo();
+        showToast("✨ Automated demo complete! You are now in Manual Mode.", "success");
+      }, 4000);
+      autoDemoTimeouts.push(t3);
+
+    }, 3500);
+    autoDemoTimeouts.push(t2);
+
+  }, 3500);
+  autoDemoTimeouts.push(t1);
+}
+
 function initHeroActions() {
   const quickDemoBtn = document.getElementById("hero-quick-demo-btn");
   if (quickDemoBtn) {
     quickDemoBtn.addEventListener("click", () => {
-      document.getElementById("console-section").scrollIntoView({ behavior: "smooth" });
-      loadSampleScenario("scenario_2");
+      runAutoShowcaseDemo();
     });
   }
 }
@@ -486,6 +567,10 @@ function startPolling(reviewId) {
           } else {
             showToast("Review pipeline failed due to critical error", "error");
           }
+
+          if (isAutoDemoRunning) {
+            runAutoTourSteps();
+          }
         }
       }
     } catch (e) {
@@ -615,7 +700,11 @@ function renderAgentGrid(agentExecutions) {
     else if (exec.status === "RUNNING") tagClass = "tag-running";
     else if (exec.status === "FAILED") tagClass = "tag-failed";
 
-    const dur = (exec.start_time && exec.end_time) ? `${(exec.end_time - exec.start_time).toFixed(2)}s` : "-";
+    let dur = "-";
+    if (exec.start_time && exec.end_time) {
+      const diff = exec.end_time - exec.start_time;
+      dur = diff < 0.01 ? "< 0.01s" : `${diff.toFixed(2)}s`;
+    }
     const tools = (exec.tools_called && exec.tools_called.length > 0) ? exec.tools_called.join(", ") : "None";
 
     return `

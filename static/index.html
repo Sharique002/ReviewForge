@@ -78,8 +78,8 @@
             <span>Launch Review Console</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </a>
-          <button id="hero-quick-demo-btn" class="btn btn-dark btn-lg">
-            <span>Run Quick Demo</span>
+          <button id="hero-quick-demo-btn" class="btn btn-dark btn-lg" onclick="runAutoShowcaseDemo()">
+            <span>Run Quick Demo (Auto)</span>
           </button>
         </div>
 
@@ -303,7 +303,12 @@
           <div class="card-body">
             <!-- 1-Click Quick Scenario Loaders -->
             <div class="scenarios-quick-panel">
-              <div class="quick-panel-label">⚡ 1-Click Interactive Scenarios:</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div class="quick-panel-label" style="margin-bottom: 0;">⚡ 1-Click Interactive Scenarios:</div>
+                <button type="button" class="btn btn-dark btn-xs" onclick="runAutoShowcaseDemo()" title="Hands-free automated tour">
+                  🎬 Auto Demo Tour
+                </button>
+              </div>
               <div class="scenario-buttons-grid">
                 <button type="button" class="btn-scenario scenario-clean" onclick="loadSampleScenario('scenario_1')">
                   <div class="scenario-btn-top">
