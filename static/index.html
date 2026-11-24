@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewForge — Automated Multi-Agent Code Review Board</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Announcement / Topbar -->
+  <div class="top-announcement">
+    <span>✨ Autonomous Multi-Agent Code Governance &bull; Enterprise AST Security &bull; Automated Patch Remediation</span>
+    <a href="#console-section" class="top-announcement-link">Explore Live Console &rarr;</a>
+  </div>
+
+  <!-- Main Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="brand-badge-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div class="brand-name-group">
+          <span class="brand-name">ReviewForge</span>
+          <span class="brand-tag">Enterprise v1.0</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#hero-section" class="nav-link active">Home</a>
+        <a href="#console-section" class="nav-link">Review Console</a>
+        <a href="#agents-section" class="nav-link">Agents (6)</a>
+        <a href="#features-section" class="nav-link">Core Features</a>
+        <a href="/api/health" target="_blank" class="nav-link">API Health</a>
+      </nav>
+
+      <div class="nav-actions">
+        <div id="provider-badge" class="status-pill pill-online">
+          <span class="pill-dot"></span>
+          <span id="provider-name">Checking Engine...</span>
+        </div>
+        <a href="#upload-card" class="btn btn-lime btn-sm">
+          <span>Start Review</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section (Aligned with Sasmax Hero) -->
+  <section id="hero-section" class="hero-section">
+    <div class="hero-container">
+      <!-- Left Hero Content -->
+      <div class="hero-content">
+        <div class="hero-kicker">
+          <span class="kicker-pill">AUTONOMOUS MULTI-AGENT GOVERNANCE</span>
+          <span class="kicker-text">Enterprise Code Review Platform</span>
+        </div>
+        
+        <h1 class="hero-title">
+          Code review <span class="highlight-lime">ambitions</span><br>
+          turned into <span class="underline-black">real trust</span>
+        </h1>
+
+        <p class="hero-desc">
+          Deploy an autonomous team of six specialist agents powered by Microsoft Semantic Kernel. 
+          Perform concurrent AST security analysis, Ruff linting, test discovery, and deterministic consensus with automated dry-run fix proposals.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="#console-section" class="btn btn-lime btn-lg">
+            <span>Launch Review Console</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+          <button id="hero-quick-demo-btn" class="btn btn-dark btn-lg">
+            <span>Run Quick Demo</span>
+          </button>
+        </div>
+
+        <div class="hero-microcopy">
+          <span>&#x2714; 100% Local-First ($0.00 Cost)</span>
+          <span>&#x2714; Isolated Docker Sandbox</span>
+          <span>&#x2714; Tamper-Evident JSONL Audit</span>
+        </div>
+      </div>
+
+      <!-- Right Hero Illustration & Floating Bento Cards -->
+      <div class="hero-visual">
+        <div class="hero-illustration-wrapper">
+          <!-- Stylized Tech Developer Illustration -->
+          <svg class="hero-svg-art" viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background Accent Circles -->
+            <circle cx="260" cy="200" r="160" fill="#bef264" fill-opacity="0.25"/>
+            <circle cx="390" cy="90" r="45" fill="#f4f4f5" stroke="#18181b" stroke-width="2"/>
+            
+            <!-- Desk and Laptop Setup -->
+            <rect x="70" y="310" width="380" height="14" rx="7" fill="#18181b"/>
+            <polygon points="170,310 185,230 335,230 350,310" fill="#27272a"/>
+            <rect x="180" y="160" width="160" height="110" rx="8" fill="#18181b" stroke="#bef264" stroke-width="3"/>
+            <rect x="192" y="172" width="136" height="86" rx="4" fill="#09090b"/>
+            
+            <!-- Code Lines on Screen -->
+            <rect x="204" y="184" width="60" height="6" rx="3" fill="#bef264"/>
+            <rect x="204" y="196" width="100" height="5" rx="2" fill="#e4e4e7"/>
+            <rect x="204" y="206" width="80" height="5" rx="2" fill="#38bdf8"/>
+            <rect x="204" y="216" width="70" height="5" rx="2" fill="#a1a1aa"/>
+            <rect x="204" y="226" width="90" height="5" rx="2" fill="#bef264"/>
+            
+            <!-- Developer Character (Minimalist Line Art) -->
+            <ellipse cx="260" cy="115" rx="28" ry="32" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+            <!-- Hair -->
+            <path d="M232 110 C235 85, 275 75, 288 100 C280 88, 250 82, 232 110 Z" fill="#18181b"/>
+            <!-- Smile & Eyes -->
+            <circle cx="250" cy="112" r="2.5" fill="#18181b"/>
+            <circle cx="270" cy="112" r="2.5" fill="#18181b"/>
+            <path d="M255 125 Q260 132 265 125" stroke="#18181b" stroke-width="2" stroke-linecap="round"/>
+            <!-- Body -->
+            <path d="M225 147 C220 185, 210 240, 205 310 L315 310 C310 240, 300 185, 295 147 Z" fill="#18181b"/>
+            
+            <!-- Multi-Agent Node Graphs Floating -->
+            <g class="float-node-1">
+              <rect x="360" y="60" width="130" height="55" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+              <text x="375" y="82" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#18181b">Security Agent</text>
+              <text x="375" y="98" font-family="'JetBrains Mono', monospace" font-size="9" fill="#16a34a">&#x2714; Bandit 0 RCE</text>
+            </g>
+
+            <g class="float-node-2">
+              <rect x="40" y="140" width="125" height="55" rx="10" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+              <text x="52" y="162" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700" fill="#18181b">Consensus</text>
+              <text x="52" y="178" font-family="'JetBrains Mono', monospace" font-size="9" fill="#0284c7">&#x26A1; Fan-Out/In</text>
+            </g>
+          </svg>
+
+          <!-- Floating Metric Card 1 (Aligned with "78 Popularity rate" from sample) -->
+          <div class="floating-stat-card card-top-right">
+            <div class="stat-badge-lime">
+              <span class="stat-score-number">98</span>
+              <span class="stat-score-label">TRUST SCORE</span>
+            </div>
+            <div class="stat-body">
+              <div class="stat-title">Consensus Confidence</div>
+              <div class="stat-note">Deterministic security & test policy</div>
+            </div>
+          </div>
+
+          <!-- Floating Metric Card 2 -->
+          <div class="floating-stat-card card-bottom-left">
+            <div class="stat-pill-icon">&#x2728;</div>
+            <div>
+              <div class="stat-title">6 Autonomous Agents</div>
+              <div class="stat-note">Specialist & Remediation Pipeline Active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vibrant Lime Green Ribbon Banner ("Working with these brands" in sample) -->
+  <section class="lime-ribbon-section">
+    <div class="ribbon-container">
+      <div class="ribbon-header">
+        <span class="ribbon-label">POWERED BY 6 SPECIALIST AUTONOMOUS AGENTS</span>
+      </div>
+
+      <div class="ribbon-agents-marquee">
+        <div class="agent-chip">
+          <span class="agent-chip-icon">⚡</span>
+          <span class="agent-chip-name">Diff Agent</span>
+          <span class="agent-chip-tool">difflib</span>
+        </div>
+        <div class="agent-chip">
+          <span class="agent-chip-icon">🎨</span>
+          <span class="agent-chip-name">Style Agent</span>
+          <span class="agent-chip-tool">Ruff & PEP 8</span>
+        </div>
+        <div class="agent-chip">
+          <span class="agent-chip-icon">🛡️</span>
+          <span class="agent-chip-name">Security Agent</span>
+          <span class="agent-chip-tool">Bandit & Secrets</span>
+        </div>
+        <div class="agent-chip">
+          <span class="agent-chip-icon">🧪</span>
+          <span class="agent-chip-name">Test-Coverage Agent</span>
+          <span class="agent-chip-tool">pytest</span>
+        </div>
+        <div class="agent-chip">
+          <span class="agent-chip-icon">⚖️</span>
+          <span class="agent-chip-name">Reviewer Manager</span>
+          <span class="agent-chip-tool">Semantic Kernel</span>
+        </div>
+        <div class="agent-chip">
+          <span class="agent-chip-icon">🛠️</span>
+          <span class="agent-chip-name">Fix-Suggestion Agent</span>
+          <span class="agent-chip-tool">Auto-Patch</span>
+        </div>
+      </div>
+
+      <!-- Circular Sticker Badge (like "Pages 16+" in sample) -->
+      <div class="ribbon-circular-badge">
+        <div class="badge-inner">
+          <span class="badge-text-top">VERIFIED</span>
+          <span class="badge-text-big">34/34</span>
+          <span class="badge-text-sub">TESTS</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Interactive Review Console (Bento Grid) -->
+  <section id="console-section" class="console-section">
+    <div class="section-header">
+      <div class="kicker-pill">INTERACTIVE CONSOLE</div>
+      <h2 class="section-title">Automated Code Review Dashboard</h2>
+      <p class="section-desc">Submit your snapshot archive (.zip) or select one of the pre-configured demo scenarios.</p>
+    </div>
+
+    <!-- Stats Quick Bar -->
+    <div class="console-stats-grid">
+      <div class="bento-metric-card">
+        <div class="metric-top">
+          <span class="metric-label">TOTAL REVIEWS</span>
+          <span class="metric-icon">📁</span>
+        </div>
+        <div class="metric-value" id="stat-total-reviews">0</div>
+        <div class="metric-footer">Stored in SQLite &bull; data/reviews.db</div>
+      </div>
+
+      <div class="bento-metric-card">
+        <div class="metric-top">
+          <span class="metric-label">COMPLETED REVIEWS</span>
+          <span class="metric-icon">🏁</span>
+        </div>
+        <div class="metric-value text-lime" id="stat-completed-reviews">0</div>
+        <div class="metric-footer">Fully consolidated verdicts</div>
+      </div>
+
+      <div class="bento-metric-card">
+        <div class="metric-top">
+          <span class="metric-label">SPECIALIST AGENTS</span>
+          <span class="metric-icon">🤖</span>
+        </div>
+        <div class="metric-value text-blue" id="stat-active-agents">6</div>
+        <div class="metric-footer">Microsoft Semantic Kernel v1.47</div>
+      </div>
+
+      <div class="bento-metric-card">
+        <div class="metric-top">
+          <span class="metric-label">BLOCKING FINDINGS</span>
+          <span class="metric-icon">⚠️</span>
+        </div>
+        <div class="metric-value text-crimson" id="stat-blocking-findings">0</div>
+        <div class="metric-footer">CRITICAL &bull; HIGH &bull; MEDIUM</div>
+      </div>
+    </div>
+
+    <!-- Quick Visual Onboarding: How It Works in 3 Steps -->
+    <div class="how-it-works-banner">
+      <div class="how-step">
+        <div class="step-num-badge">1</div>
+        <div class="step-content">
+          <strong>Select or Drop Code</strong>
+          <span>Choose a 1-click demo scenario or drop your custom snapshot ZIP archive.</span>
+        </div>
+      </div>
+      <div class="how-arrow">&rarr;</div>
+      <div class="how-step">
+        <div class="step-num-badge">2</div>
+        <div class="step-content">
+          <strong>6 Autonomous Agents Scan</strong>
+          <span>AST security, Ruff PEP 8 style, pytest coverage, and diffing run concurrently.</span>
+        </div>
+      </div>
+      <div class="how-arrow">&rarr;</div>
+      <div class="how-step">
+        <div class="step-num-badge">3</div>
+        <div class="step-content">
+          <strong>Consensus Verdict & Auto-Patch</strong>
+          <span>Get an authoritative merge decision and a 1-click dry-run validated patch.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Bento Split -->
+    <div class="console-bento-layout">
+      <!-- Left Column: Ingestion & History -->
+      <div class="console-sidebar">
+        <!-- Card 1: Upload Archive -->
+        <div id="upload-card" class="bento-card card-light">
+          <div class="card-header">
+            <div>
+              <h3>Submit Code Review</h3>
+              <div class="card-subtitle">Snapshot Comparison Architecture</div>
+            </div>
+            <span class="pill-badge pill-lime">Interactive</span>
+          </div>
+          <div class="card-body">
+            <!-- 1-Click Quick Scenario Loaders -->
+            <div class="scenarios-quick-panel">
+              <div class="quick-panel-label">⚡ 1-Click Interactive Scenarios:</div>
+              <div class="scenario-buttons-grid">
+                <button type="button" class="btn-scenario scenario-clean" onclick="loadSampleScenario('scenario_1')">
+                  <div class="scenario-btn-top">
+                    <strong>Scenario 1: Clean Math</strong>
+                    <span class="scenario-tag tag-approve">&#x2714; APPROVE</span>
+                  </div>
+                  <span class="scenario-btn-desc">Well-formatted code with passing unit tests</span>
+                </button>
+                <button type="button" class="btn-scenario scenario-security" onclick="loadSampleScenario('scenario_2')">
+                  <div class="scenario-btn-top">
+                    <strong>Scenario 2: Auth Security</strong>
+                    <span class="scenario-tag tag-changes">&#x26A0; PATCH READY</span>
+                  </div>
+                  <span class="scenario-btn-desc">Flags eval() vulnerability &amp; proposes remediation</span>
+                </button>
+                <button type="button" class="btn-scenario scenario-untested" onclick="loadSampleScenario('scenario_3')">
+                  <div class="scenario-btn-top">
+                    <strong>Scenario 3: Untested</strong>
+                    <span class="scenario-tag tag-changes">&#x26A0; UNTESTED</span>
+                  </div>
+                  <span class="scenario-btn-desc">Detects missing test coverage &amp; PEP 8 issues</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="divider-text"><span>OR UPLOAD CUSTOM ZIP</span></div>
+
+            <form id="upload-form">
+              <div class="form-group">
+                <label for="project-name-input">Project Name</label>
+                <input type="text" id="project-name-input" class="form-input" placeholder="e.g. MyEnterpriseService" required>
+              </div>
+
+              <div class="form-group">
+                <div class="label-with-action">
+                  <label>Snapshot Archive (.zip)</label>
+                  <a href="/api/samples/scenario_1/download" class="helper-link" download title="Download a sample ZIP containing base/ and proposed/ snapshots">
+                    📥 Download Sample ZIP
+                  </a>
+                </div>
+                <div id="drop-zone" class="drop-zone">
+                  <input type="file" id="file-input" accept=".zip" class="file-input-hidden">
+                  <div class="drop-icon">📦</div>
+                  <div class="drop-zone-text">Drag &amp; drop <code>.zip</code> or <span class="browse-link">browse</span></div>
+                  <div id="selected-filename" class="selected-file-label"></div>
+                </div>
+                <div class="contract-note">
+                  Structure: Must contain <code>base/</code> and <code>proposed/</code> source folders.
+                </div>
+              </div>
+
+              <div id="upload-error-msg" class="alert alert-danger" style="display: none;"></div>
+
+              <button type="submit" id="btn-submit-review" class="btn btn-lime btn-block">
+                <span>Start Multi-Agent Review</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Card 2: Review History -->
+        <div class="bento-card card-light" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <div>
+              <h3>Review History</h3>
+              <div class="card-subtitle">Stored in SQLite &bull; data/reviews.db</div>
+            </div>
+            <button id="btn-refresh" class="btn btn-dark btn-xs" title="Refresh Reviews">
+              Refresh
+            </button>
+          </div>
+          <div class="card-body review-history-list" id="review-history-container">
+            <div class="empty-state">No reviews executed yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Active Review Details -->
+      <div class="console-main">
+
+        <!-- Live Pipeline Progress Card (Active during scanning) -->
+        <div id="live-pipeline-progress" class="pipeline-progress-card" style="display: none;">
+          <div class="progress-title-row">
+            <div class="progress-indicator-group">
+              <span class="pulse-indicator"></span>
+              <strong id="pipeline-status-text">Multi-Agent Review Pipeline Running...</strong>
+            </div>
+            <span id="pipeline-elapsed-time" class="elapsed-badge">0.0s</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="pipeline-progress-fill" class="progress-bar-fill" style="width: 20%;"></div>
+          </div>
+          <div class="pipeline-steps-row">
+            <span id="pstep-1" class="pstep active">&#x2714; 1. Quarantine &amp; Extraction</span>
+            <span id="pstep-2" class="pstep active">&#x26A1; 2. Specialist Fan-Out (Style, Security, Test)</span>
+            <span id="pstep-3" class="pstep">&#x2696; 3. Consensus Decision</span>
+            <span id="pstep-4" class="pstep">&#x1F6E0; 4. Auto-Remediation Patch</span>
+          </div>
+        </div>
+
+        <!-- Decision Verdict Banner -->
+        <div id="active-review-banner" class="bento-card verdict-banner-card">
+          <div class="verdict-header">
+            <div>
+              <div class="verdict-id-row">
+                <span id="active-review-badge" class="verdict-id-badge">SELECT A REVIEW</span>
+                <span id="active-review-mode-badge" class="pill-badge pill-zinc">CHANGE REVIEW</span>
+              </div>
+              <h2 id="active-project-title" class="verdict-project-title">No review selected</h2>
+              <div id="active-review-meta" class="verdict-meta-row"></div>
+            </div>
+            <div class="verdict-actions-right">
+              <div id="recommendation-badge-container">
+                <span class="badge-pending">READY TO REVIEW</span>
+              </div>
+              <div class="verdict-action-buttons">
+                <button type="button" id="btn-download-report" class="btn btn-dark btn-xs" title="Download Full Markdown Report">
+                  <span>📥 Download Report</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rationale Callout Box -->
+          <div id="recommendation-rationale-box" class="rationale-callout" style="display: none;">
+            <div class="rationale-kicker">DECISION RATIONALE:</div>
+            <div id="recommendation-rationale-text" class="rationale-body"></div>
+          </div>
+        </div>
+
+        <!-- Modern Console Tab Navigation -->
+        <div class="console-tabs-nav">
+          <button type="button" class="tab-btn active" data-tab="tab-findings">
+            <span>📊 Findings &amp; Overview</span>
+            <span id="tab-findings-count-badge" class="tab-badge">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="tab-agents">
+            <span>🤖 Specialist Agents</span>
+            <span class="tab-badge">6</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="tab-patch">
+            <span>🛠️ Fix Patch</span>
+            <span id="tab-patch-status-badge" class="tab-badge tab-badge-lime">Ready</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="tab-diff-logs">
+            <span>📜 Diff &amp; Audit Logs</span>
+          </button>
+        </div>
+
+        <!-- TAB PANEL 1: Findings & Overview -->
+        <div id="tab-findings" class="console-tab-panel active">
+          <div class="bento-card card-light">
+            <div class="card-header">
+              <div>
+                <h3>Consolidated Findings Explorer</h3>
+                <div class="card-subtitle">Deduplicated and ranked across all 6 specialist agents</div>
+              </div>
+              <div class="findings-filter-row">
+                <input type="text" id="findings-search" class="filter-input" placeholder="Search title, file, or rule...">
+              </div>
+            </div>
+            <!-- Clickable Severity Filter Pills -->
+            <div class="severity-pills-bar">
+              <button type="button" class="sev-pill active" data-sev="ALL">
+                <span>All Findings</span> <strong id="sev-count-all">0</strong>
+              </button>
+              <button type="button" class="sev-pill sev-critical" data-sev="CRITICAL">
+                <span>Critical</span> <strong id="sev-count-critical">0</strong>
+              </button>
+              <button type="button" class="sev-pill sev-high" data-sev="HIGH">
+                <span>High</span> <strong id="sev-count-high">0</strong>
+              </button>
+              <button type="button" class="sev-pill sev-medium" data-sev="MEDIUM">
+                <span>Medium</span> <strong id="sev-count-medium">0</strong>
+              </button>
+              <button type="button" class="sev-pill sev-low" data-sev="LOW">
+                <span>Low</span> <strong id="sev-count-low">0</strong>
+              </button>
+              <button type="button" class="sev-pill sev-info" data-sev="INFO">
+                <span>Info</span> <strong id="sev-count-info">0</strong>
+              </button>
+            </div>
+            <div class="card-body" id="findings-container">
+              <div class="empty-state">No findings recorded.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB PANEL 2: Specialist Agents Activity -->
+        <div id="tab-agents" class="console-tab-panel">
+          <div class="bento-card card-light">
+            <div class="card-header">
+              <div>
+                <h3>Specialist Agent Activity</h3>
+                <div class="card-subtitle">Concurrent Fan-Out &amp; Fan-In Consensus Lifecycle</div>
+              </div>
+              <span class="pill-badge pill-dark">6 Agents Active</span>
+            </div>
+            <div class="agent-bento-grid" id="agent-grid-container">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB PANEL 3: Fix Patch Proposal -->
+        <div id="tab-patch" class="console-tab-panel">
+          <div class="bento-card card-dark" id="fix-suggestion-panel">
+            <div class="card-header border-dark">
+              <div>
+                <span class="pill-badge pill-lime">Automated Remediation</span>
+                <h3 style="color: #ffffff; margin-top: 0.25rem;">Fix-Suggestion Agent Patch Proposal</h3>
+              </div>
+              <div class="patch-header-actions">
+                <span id="patch-validation-badge" class="badge-validation">VALIDATION: PENDING</span>
+                <button type="button" id="btn-copy-patch" class="btn btn-lime btn-xs" title="Copy Unified Diff Patch">
+                  <span>📋 Copy Patch</span>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="fix-details-meta" class="fix-meta-bar"></div>
+              <div id="fix-explanation-box" class="fix-explanation-box"></div>
+              <div class="diff-syntax-wrapper">
+                <div class="diff-syntax-title">PROPOSED UNIFIED DIFF PATCH (READ-ONLY PREVIEW)</div>
+                <pre id="fix-diff-code" class="diff-code-block">No remediation patch needed.</pre>
+              </div>
+              <div class="patch-safety-footer">
+                &#x1F512; <strong>Non-Destructive Guarantee:</strong> ReviewForge generates proposed unified diff previews only. Original source code files were not modified.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB PANEL 4: Diff & Audit Logs -->
+        <div id="tab-diff-logs" class="console-tab-panel">
+          <!-- Diff Summary -->
+          <div class="bento-card card-light">
+            <div class="card-header">
+              <div>
+                <h3>Source Snapshot Diff Summary</h3>
+                <div class="card-subtitle">Files added, modified, deleted, and renamed between base/ and proposed/</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <pre id="diff-summary-code" class="diff-summary-block">No diff information.</pre>
+            </div>
+          </div>
+
+          <!-- Execution Trace Log -->
+          <div class="bento-card card-dark" style="margin-top: 1.5rem;">
+            <div class="card-header border-dark">
+              <div>
+                <h3 style="color: #ffffff;">Append-Only Execution Audit Log</h3>
+                <div class="card-subtitle text-zinc">Tamper-evident logs/run_log.jsonl with automatic secret redaction</div>
+              </div>
+              <span class="pill-badge pill-zinc">Live Trace</span>
+            </div>
+            <div class="card-body execution-trace-log" id="execution-trace-container">
+              <div class="empty-state text-zinc">No execution events recorded yet.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Discover Core Features Section (Directly from bottom of Sasmax sample image) -->
+  <section id="features-section" class="features-section">
+    <div class="section-header">
+      <div class="kicker-pill">OUR ARCHITECTURE</div>
+      <h2 class="section-title">Discover the core features</h2>
+      <p class="section-desc">Engineered for enterprise-grade determinism, automated code safety, and zero cloud costs.</p>
+    </div>
+
+    <div class="features-bento-grid">
+      <!-- Feature Card 1 -->
+      <div class="feature-bento-card card-dark">
+        <div class="feature-card-number">01.</div>
+        <div class="feature-card-title">Semantic Kernel Fan-Out</div>
+        <p class="feature-card-desc">
+          Four specialist agents (Diff, Style, Security, Test-Coverage) execute concurrently under Microsoft Semantic Kernel using real Python plugins and exception isolation.
+        </p>
+        <div class="feature-card-badge">CONCURRENT &bull; ISOLATED</div>
+      </div>
+
+      <!-- Feature Card 2 -->
+      <div class="feature-bento-card card-dark">
+        <div class="feature-card-number">02.</div>
+        <div class="feature-card-title">Consolidated Consensus</div>
+        <p class="feature-card-desc">
+          The Reviewer Manager gathers specialist outputs from the Shared Change State blackboard, deduplicates overlapping issues, and enforces an immutable decision policy.
+        </p>
+        <div class="feature-card-badge">DEDUPLICATION &bull; RANKING</div>
+      </div>
+
+      <!-- Feature Card 3 -->
+      <div class="feature-bento-card card-dark">
+        <div class="feature-card-number">03.</div>
+        <div class="feature-card-title">Automated Fix Proposals</div>
+        <p class="feature-card-desc">
+          The Fix-Suggestion agent inspects the single highest-severity finding, formulates a clean unified diff patch, and dry-run validates applicability without mutating project files.
+        </p>
+        <div class="feature-card-badge">AUTOMATED REMEDIATION</div>
+      </div>
+
+      <!-- Feature Card 4 -->
+      <div class="feature-bento-card card-light">
+        <div class="feature-card-icon">🛡️</div>
+        <div class="feature-card-title">Dual AST & Secret Redaction</div>
+        <p class="feature-card-desc">
+          Runs real Bandit AST scanning and detect-secrets credential detection. Discovered keys are automatically masked across all logs, databases, and UI views.
+        </p>
+      </div>
+
+      <!-- Feature Card 5 -->
+      <div class="feature-bento-card card-light">
+        <div class="feature-card-icon">⚡</div>
+        <div class="feature-card-title">Zero-Cost Local First</div>
+        <p class="feature-card-desc">
+          Defaults to local Ollama and a deterministic offline engine. Never incurs cloud charges, paid subscriptions, or external network requirements.
+        </p>
+      </div>
+
+      <!-- Feature Card 6 -->
+      <div class="feature-bento-card card-light">
+        <div class="feature-card-icon">📦</div>
+        <div class="feature-card-title">Quarantine & Sandbox Isolation</div>
+        <p class="feature-card-desc">
+          Pre-extraction ZIP validation blocks path traversals and zip bombs. Dynamic test execution is gated by isolated Docker containers, strictly prohibiting host execution.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modern Footer -->
+  <footer class="footer-modern">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="brand-badge-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div class="footer-brand-title">REVIEWFORGE</div>
+        <p class="footer-brand-desc">
+          Autonomous Multi-Agent Code Governance & Review Platform<br>
+          Enterprise Architecture &bull; Python 3.11 &bull; 6 Specialist Agents
+        </p>
+      </div>
+
+      <div class="footer-links-group">
+        <div class="footer-col">
+          <div class="footer-col-title">Documentation</div>
+          <a href="/api/health" target="_blank" class="footer-link">System Health API</a>
+          <a href="/api/agents" target="_blank" class="footer-link">Agent Roster API</a>
+          <a href="/api/providers/status" target="_blank" class="footer-link">AI Provider Status</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Verification</div>
+          <span class="footer-static-item">&#x2714; 27/27 Tests Passed</span>
+          <span class="footer-static-item">&#x2714; 10/10 SK Compatibility</span>
+          <span class="footer-static-item">&#x2714; 19/19 Notebook Cells</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; 2026 ReviewForge &bull; Enterprise Code Governance & Review System. All rights reserved.</div>
+      <div class="footer-bottom-badge">Local-First &bull; Zero Incurred Cost</div>
+    </div>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

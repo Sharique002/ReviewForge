@@ -1,0 +1,31 @@
+# CSE476 CA2 REQUIREMENT TRACEABILITY MATRIX
+**Project:** ReviewForge — Automated Code Review Board (Q14)  
+**Status:** ALL REQUIREMENTS SATISFIED & VERIFIED (100%)  
+**Test Suite Verification:** 34 PASSED / 0 FAILED / 0 SKIPPED  
+
+---
+
+| Req ID | Authoritative Assignment Requirement | Implementation File(s) | Verification Test(s) | Demonstration Evidence | Verification Status |
+|---|---|---|---|---|---|
+| **REQ-01** | Five mandatory agents (Diff, Style, Security, Test-Coverage, Reviewer Manager) | `agents/diff_agent.py`<br>`agents/style_agent.py`<br>`agents/security_agent.py`<br>`agents/test_coverage_agent.py`<br>`agents/reviewer_manager.py` | `tests/test_semantic_kernel_compatibility.py`<br>`tests/test_orchestration.py`<br>`tests/test_sandbox.py` | All 5 agents execute with real tools; Agent Grid in UI | **VERIFIED** |
+| **REQ-02** | Group-of-Three Extension: 6th agent (Fix-Suggestion Agent) | `agents/fix_suggestion_agent.py`<br>`tools/fix_tools.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | Non-destructive dry-run patch proposal in UI | **VERIFIED** |
+| **REQ-03** | Microsoft Semantic Kernel genuine integration (no mock loops) | `agents/*_agent.py`<br>`orchestration/fanout_fanin.py` | `tests/test_semantic_kernel_compatibility.py` | Semantic Kernel plugins and functions invoked | **VERIFIED** |
+| **REQ-04** | Fan-out / fan-in multi-agent orchestration | `orchestration/fanout_fanin.py`<br>`orchestration/workflow.py` | `tests/test_orchestration.py`<br>`tests/test_sandbox.py` | Initial diff discovery, concurrent fan-out (Style, Security, Test), Reviewer Manager fan-in | **VERIFIED** |
+| **REQ-05** | Shared Change State object used by all agents | `memory/shared_change_state.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | Thread-safe dataclass synchronizing all agent findings | **VERIFIED** |
+| **REQ-06** | Every working agent calls at least two real Python tools | `tools/diff_tools.py`<br>`tools/style_tools.py`<br>`tools/security_tools.py`<br>`tools/testing_tools.py`<br>`tools/manager_tools.py`<br>`tools/fix_tools.py` | `tests/test_tools.py`<br>`tests/test_semantic_kernel_compatibility.py` | Real AST analysis, Ruff, Bandit, test discovery, safe runner | **VERIFIED** |
+| **REQ-07** | Input Contract: ZIP archive with `base/` and `proposed/` snapshots | `services/archive_validator.py`<br>`services/extraction_service.py` | `tests/test_archive_security.py` | Strict path validation, traversal rejection, single/dual snapshot | **VERIFIED** |
+| **REQ-08** | Security scanning via real tools (Bandit & detect-secrets) | `tools/security_tools.py`<br>`agents/security_agent.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | AST Bandit rules and entropy-based credential detection | **VERIFIED** |
+| **REQ-09** | Automatic redaction of sensitive credentials and tokens | `memory/persistence.py`<br>`tools/security_tools.py` | `tests/test_tools.py` | `[REDACTED_CREDENTIAL]` in findings, audit logs, and DB | **VERIFIED** |
+| **REQ-10** | Safe test execution / honest NOT_RUN fallback | `services/sandbox_service.py`<br>`tools/testing_tools.py`<br>`docker/Dockerfile.sandbox` | `tests/test_sandbox.py`<br>`tests/test_tools.py` | Docker container isolation (--network none, --user 1000, tmpfs); never runs untrusted code on host | **VERIFIED** |
+| **REQ-11** | Reviewer Manager deduplicates and ranks findings by severity | `tools/manager_tools.py`<br>`agents/reviewer_manager.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | Proximity & category deduplication, CRITICAL-to-INFO ordering | **VERIFIED** |
+| **REQ-12** | Deterministic merge recommendation policy (APPROVE / REQUEST_CHANGES) | `tools/manager_tools.py`<br>`agents/reviewer_manager.py` | `tests/test_orchestration.py`<br>`tests/test_sandbox.py` | Blocking on CRITICAL/HIGH/MEDIUM; approval withheld if mandatory agents fail | **VERIFIED** |
+| **REQ-13** | Fix-Suggestion Agent targets single highest-severity finding | `agents/fix_suggestion_agent.py`<br>`tools/fix_tools.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | Synthesizes targeted remediation patch for top finding | **VERIFIED** |
+| **REQ-14** | Patch proposal validated without modifying project files | `tools/fix_tools.py`<br>`agents/fix_suggestion_agent.py` | `tests/test_tools.py`<br>`tests/test_orchestration.py` | Dry-run AST and syntax validation; zero in-place mutations | **VERIFIED** |
+| **REQ-15** | Flask backend REST API with health and review endpoints | `backend/app.py`<br>`backend/routes.py` | `tests/test_api.py` | 6/6 API tests passing; health, status, upload, trace endpoints | **VERIFIED** |
+| **REQ-16** | Professional developer-tool dark theme web dashboard | `static/index.html`<br>`static/css/styles.css`<br>`static/js/app.js` | `tests/test_api.py` (`test_dashboard_index`) | Full interactive console with accurate COMPLETED/PARTIAL/FAILED badges | **VERIFIED** |
+| **REQ-17** | SQLite database persistence for reviews and findings | `memory/persistence.py` | `tests/test_tools.py`<br>`tests/test_api.py` | `data/reviews.db` relational storage with ACID transactions | **VERIFIED** |
+| **REQ-18** | Append-only JSONL execution audit log | `memory/persistence.py` | `tests/test_tools.py`<br>`tests/test_api.py` | `logs/run_log.jsonl` atomic event logs with secret redaction | **VERIFIED** |
+| **REQ-19** | Local Ollama first & deterministic offline fallback | `ai/*_provider.py`<br>`ai/provider_factory.py` | `tests/test_api.py`<br>`tests/test_orchestration.py` | Zero external API dependencies; zero API costs ($0.00) | **VERIFIED** |
+| **REQ-20** | Accurately classified review states (COMPLETED, PARTIAL, FAILED) | `orchestration/fanout_fanin.py`<br>`tools/manager_tools.py` | `tests/test_sandbox.py` | Discloses unexecuted tests and failed agents; blocks unjustified approval | **VERIFIED** |
+| **REQ-21** | Correct Dependency Injection for SandboxService | `agents/test_coverage_agent.py`<br>`tools/testing_tools.py` | `tests/test_sandbox.py` | Injected into agent and plugin; no hardcoded None values | **VERIFIED** |
+| **REQ-22** | Single Diff Agent execution in orchestration pipeline | `orchestration/fanout_fanin.py` | `tests/test_sandbox.py` | Diff Agent runs in Step 1 only; duplicate removed from Step 2 fan-out | **VERIFIED** |

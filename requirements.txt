@@ -1,0 +1,19 @@
+# Automated Code Review Board — CSE476 CA2
+# Pinned Dependencies for Windows 11 / Python 3.11
+
+semantic-kernel==1.47.0
+ollama==0.6.3
+ruff==0.17.5
+bandit==1.9.4
+detect-secrets==1.5.0
+pytest==9.1.1
+pytest-cov==7.1.0
+coverage==7.17.2
+Flask==3.1.3
+flask-cors==6.0.2
+werkzeug==3.1.1
+pydantic==2.13.5
+pydantic-settings==2.7.1
+requests==2.34.2
+python-dotenv==1.2.3
+aiofiles==23.2.1

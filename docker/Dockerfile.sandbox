@@ -1,0 +1,39 @@
+# ReviewForge Ephemeral Test Execution Sandbox
+# CSE476 CA2 — Automated Code Review Board (Q14)
+#
+# Security Properties:
+# - Non-root execution (UID 1000: GID 1000)
+# - Pinned, controlled test execution dependencies
+# - Network isolation (--network none enforced at runtime)
+# - Read-only source mounting (:ro enforced at runtime)
+# - Isolated writable temporary workspace (/tmp via tmpfs)
+
+FROM python:3.11-slim
+
+# Prevent interactive prompts and set python runtime flags
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TMPDIR=/tmp
+
+# Install pinned, controlled test dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        pytest==8.3.4 \
+        pytest-cov==6.0.0 \
+        coverage==7.6.9
+
+# Create non-root unprivileged sandbox user
+RUN groupadd -g 1000 sandbox && \
+    useradd -u 1000 -g 1000 -m -s /bin/sh sandbox
+
+# Set up isolated directories
+WORKDIR /app
+RUN chown -R 1000:1000 /app
+
+# Switch to unprivileged non-root user
+USER 1000:1000
+
+# Default entrypoint
+ENTRYPOINT ["pytest"]
+CMD ["-v"]
