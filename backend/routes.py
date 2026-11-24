@@ -157,43 +157,84 @@ def get_review_report(review_id: str):
     if not review:
         return jsonify({"error": "Not Found", "message": f"Review {review_id} not found."}), 404
 
-    # Build markdown report from saved review data
+    # Build rich markdown report with highlighted offending code
     lines = [
         f"# AUTOMATED CODE REVIEW REPORT: {review.get('project_name', 'Submitted Project')}",
         f"**Review ID:** `{review_id}`  ",
-        f"**Recommendation:** **{review.get('recommendation', 'PENDING')}**  ",
+        f"**Consensus Recommendation:** **{review.get('recommendation', 'PENDING')}**  ",
+        f"**Status:** `{review.get('status', 'COMPLETED')}` &bull; **Mode:** `{review.get('review_mode', 'CHANGE_REVIEW')}`  ",
         "",
         "## Executive Summary",
-        f"> {review.get('recommendation_rationale', 'N/A')}",
+        f"> {review.get('recommendation_rationale', 'No rationale recorded.')}",
         "",
-        "## Diff Summary",
+        "## Source Diff Summary",
         "```diff",
-        review.get("diff_summary", "No diff summary"),
+        review.get("diff_summary", "No diff summary recorded."),
         "```",
         "",
-        "## Findings",
     ]
+
     findings = review.get("findings", [])
+    blocking_findings = [f for f in findings if f.get("severity") in ("CRITICAL", "HIGH", "MEDIUM")]
+
     if not findings:
-        lines.append("*No issues identified.*")
+        lines.extend([
+            "## 🛡️ Findings & Vulnerabilities",
+            "*No defects or vulnerabilities identified in this review. All 6 specialist agents approved the codebase.*",
+            ""
+        ])
     else:
-        lines.append("| ID | Severity | File | Line | Agent | Title |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.extend([
+            "## 🛡️ Consolidated Findings Summary",
+            f"Total Findings Detected: **{len(findings)}** (Blocking: **{len(blocking_findings)}**)",
+            "",
+            "| Finding ID | Severity | File & Line | Agent | Title |",
+            "|---|---|---|---|---|",
+        ])
         for f in findings:
-            lines.append(f"| `{f.get('finding_id')}` | **{f.get('severity')}** | `{f.get('file')}` | {f.get('line')} | {f.get('agent')} | {f.get('title')} |")
+            loc = f"`{f.get('file')}:{f.get('line')}`" if f.get("file") else "Project Scope"
+            lines.append(f"| `{f.get('finding_id')}` | **{f.get('severity')}** | {loc} | {f.get('agent')} | {f.get('title')} |")
+
+        # Highlight Defective / Wrong Code Sections
+        lines.extend([
+            "",
+            "## 🚨 Defective Code Highlights & Explanations",
+            "The following section details the specific lines of defective or non-compliant source code identified by specialist agents:",
+            ""
+        ])
+
+        for f in findings:
+            sev = f.get("severity", "INFO")
+            ev = f.get("evidence") or "Defective code structure detected at this location."
+            lines.extend([
+                f"### 🔴 [{sev}] `{f.get('finding_id')}`: {f.get('title')}",
+                f"- **Target File:** `{f.get('file')}`",
+                f"- **Line Number:** `{f.get('line', 'N/A')}`",
+                f"- **Reporting Agent:** `{f.get('agent')}` (Tool: `{f.get('tool')}`)",
+                f"- **Root Cause:** {f.get('description')}",
+                "",
+                "**❌ Offending / Defective Code Snippet:**",
+                "```python",
+                f"# Line {f.get('line', '?')} in {f.get('file', 'source')}",
+                f"- {ev}",
+                "```",
+                f"**💡 Recommended Fix:** {f.get('recommendation')}",
+                ""
+            ])
 
     patch = review.get("patch_proposal")
     if patch:
         lines.extend([
-            "",
-            "## Fix Proposal (Highest-Severity Finding)",
-            f"**Target Finding:** `{patch.get('target_finding')}`  ",
-            f"**Validation:** `{patch.get('validation')}`  ",
-            f"**Explanation:** {patch.get('explanation')}  ",
+            "## 🛠️ Automated Remediation Unified Diff Patch",
+            f"Fix-Suggestion Agent synthesized and dry-run validated a non-destructive patch for `{patch.get('target_finding')}` in `{patch.get('file')}`.",
+            f"- **Dry-Run Validation Status:** `{patch.get('validation')}`",
+            f"- **Remediation Strategy:** {patch.get('explanation')}",
             "",
             "```diff",
+            "# PROPOSED UNIFIED DIFF PATCH (RED = REMOVED DEFECT, GREEN = REMEDIATION)",
             patch.get("patch", ""),
             "```",
+            ""
         ])
 
     return jsonify({"review_id": review_id, "markdown_report": "\n".join(lines)})

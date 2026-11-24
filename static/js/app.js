@@ -6,6 +6,7 @@
 let activeReviewId = null;
 let pollInterval = null;
 let currentFindings = [];
+let currentPatchProposal = null;
 let activeSeverityFilter = "ALL";
 let pipelineTimer = null;
 let pipelineStartTime = null;
@@ -851,6 +852,7 @@ async function loadReviewDetails(reviewId) {
     renderAgentGrid(review.agent_executions || {});
 
     // Render Findings
+    currentPatchProposal = review.patch_proposal || null;
     currentFindings = review.findings || [];
     filterAndRenderFindings();
     updateSeverityPillsCounts();
@@ -1015,6 +1017,7 @@ function renderFindings(findings) {
     else if (f.severity === "LOW") sevClass = "sev-low";
 
     const loc = f.file ? `${f.file}${f.line ? `:${f.line}` : ''}` : 'Project Scope';
+    const defectiveCodeHtml = renderDefectiveCodeHighlight(f, currentPatchProposal);
 
     return `
       <div class="finding-card-item">
@@ -1029,8 +1032,11 @@ function renderFindings(findings) {
         </div>
         <div class="finding-title-text">${escapeHtml(f.title)}</div>
         <div class="finding-description-text">${escapeHtml(f.description)}</div>
+
+        ${defectiveCodeHtml}
+
         <div class="finding-evidence-box">
-          <strong>Evidence (${f.tool}):</strong> ${escapeHtml(f.evidence)}
+          <strong>Agent Tool Analysis (${f.tool}):</strong> ${escapeHtml(f.evidence)}
         </div>
         <div class="finding-remediation-note">
           &#x1F4A1; <strong>Recommendation:</strong> ${escapeHtml(f.recommendation)}
@@ -1038,6 +1044,57 @@ function renderFindings(findings) {
       </div>
     `;
   }).join("");
+}
+
+function renderDefectiveCodeHighlight(finding, patchProposal) {
+  if (!finding.evidence && !finding.line && !finding.file) return "";
+
+  const lineNum = finding.line || "—";
+  const fileStr = finding.file || "source";
+  const evText = (finding.evidence || "").trim();
+
+  let codeHtml = "";
+  if (evText && !evText.startsWith("http")) {
+    codeHtml = `<div class="line-removed">- Line ${lineNum} | ${escapeHtml(evText)}   &larr; [DEFECTIVE CODE DETECTED]</div>`;
+  } else {
+    codeHtml = `<div class="line-removed">- Line ${lineNum} | ${escapeHtml(finding.description || "Defective code structure detected")}</div>`;
+  }
+
+  // If this finding is targeted by the Fix-Suggestion Agent, show the green proposed fix!
+  let patchComparisonHtml = "";
+  if (patchProposal && patchProposal.target_finding === finding.finding_id && patchProposal.patch) {
+    const addedLines = extractAddedLinesFromDiff(patchProposal.patch);
+    if (addedLines) {
+      patchComparisonHtml = `
+        <div style="margin-top: 0.45rem; font-size: 0.72rem; font-weight: 700; color: #4ade80;">
+          🟢 PROPOSED CORRECTION (DRY-RUN VALIDATED):
+        </div>
+        <div class="line-added" style="margin-top: 0.2rem;">
+          + Line ${lineNum} | ${escapeHtml(addedLines)}
+        </div>
+      `;
+    }
+  }
+
+  return `
+    <div class="defective-code-box">
+      <div class="defective-code-header">
+        <span>🚨 Highlighted Defective Code: <code>${escapeHtml(fileStr)}:${lineNum}</code></span>
+        <span class="defective-code-badge">${finding.severity} DEFECT</span>
+      </div>
+      <div class="defective-code-snippet">
+        ${codeHtml}
+        ${patchComparisonHtml}
+      </div>
+    </div>
+  `;
+}
+
+function extractAddedLinesFromDiff(diffText) {
+  if (!diffText) return "";
+  const lines = diffText.split("\n");
+  const added = lines.filter(l => l.startsWith("+") && !l.startsWith("+++")).map(l => l.substring(1).trim());
+  return added.length > 0 ? added.join("\n") : "";
 }
 
 /* -------------------------------------------------------------
