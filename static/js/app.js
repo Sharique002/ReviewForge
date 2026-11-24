@@ -154,18 +154,23 @@ async function downloadCurrentReport(reviewId) {
 
 function formatInlineMarkdown(text) {
   if (!text) return "";
-  let s = escapeHtml(text);
+  let s = String(text);
+  // Normalize bullets
+  s = s.replace(/&bull;|•/g, "•");
+  let escaped = escapeHtml(s);
+  // Restore bullet symbol as styled dot
+  escaped = escaped.replace(/•/g, '<span style="color:#71717a; margin:0 5px; font-weight:bold;">&bull;</span>');
   // Bold: **text**
-  s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#f4f4f5;">$1</strong>');
   // Inline code: `code`
-  s = s.replace(/`([^`]+)`/g, '<code class="inline-code" style="background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px; font-family:var(--font-mono); color:#bef264;">$1</code>');
+  escaped = escaped.replace(/`([^`]+)`/g, '<code class="inline-code" style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:var(--font-mono); color:#bef264; font-size:0.82rem;">$1</code>');
   // Severity tags
-  s = s.replace(/\[CRITICAL\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.7rem; font-weight:700;">CRITICAL</span>');
-  s = s.replace(/\[HIGH\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.7rem; font-weight:700;">HIGH</span>');
-  s = s.replace(/\[MEDIUM\]/g, '<span class="pill-badge pill-amber" style="font-size:0.7rem; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.15);">MEDIUM</span>');
-  s = s.replace(/\[LOW\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.7rem;">LOW</span>');
-  s = s.replace(/\[INFO\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.7rem;">INFO</span>');
-  return s;
+  escaped = escaped.replace(/\[CRITICAL\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.68rem; font-weight:800; padding:2px 7px;">CRITICAL</span>');
+  escaped = escaped.replace(/\[HIGH\]/g, '<span class="pill-badge pill-crimson" style="font-size:0.68rem; font-weight:800; padding:2px 7px;">HIGH</span>');
+  escaped = escaped.replace(/\[MEDIUM\]/g, '<span class="pill-badge pill-amber" style="font-size:0.68rem; font-weight:800; padding:2px 7px; color:#f59e0b; background:rgba(245,158,11,0.15);">MEDIUM</span>');
+  escaped = escaped.replace(/\[LOW\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.68rem; font-weight:700; padding:2px 7px;">LOW</span>');
+  escaped = escaped.replace(/\[INFO\]/g, '<span class="pill-badge pill-zinc" style="font-size:0.68rem; font-weight:700; padding:2px 7px;">INFO</span>');
+  return escaped;
 }
 
 function renderMarkdownReportToHtml(markdownText) {
@@ -180,7 +185,7 @@ function renderMarkdownReportToHtml(markdownText) {
 
   function flushCodeBlock() {
     if (!inCodeBlock) return;
-    html.push(`<div class="report-code-block"><pre style="margin:0; font-family:var(--font-mono); font-size:0.8rem; line-height:1.6;">`);
+    html.push(`<div class="report-code-block" style="background:#09090b; border:1px solid #27272a; border-radius:6px; padding:0.75rem 1rem; margin:0.5rem 0; overflow-x:auto;"><pre style="margin:0; font-family:var(--font-mono); font-size:0.8rem; line-height:1.6;">`);
     for (const rawLine of codeBlockLines) {
       let lineClass = "report-code-line";
       if (rawLine.startsWith("- ") || (rawLine.startsWith("-") && !rawLine.startsWith("---"))) {
@@ -202,11 +207,11 @@ function renderMarkdownReportToHtml(markdownText) {
   function flushTable() {
     if (!inTable) return;
     if (tableRows.length > 0) {
-      html.push(`<div style="overflow-x:auto;"><table class="report-table">`);
-      const headerCells = tableRows[0].map(c => `<th>${formatInlineMarkdown(c.trim())}</th>`).join("");
+      html.push(`<div style="overflow-x:auto; margin:0.6rem 0;"><table class="report-table" style="width:100%; border-collapse:collapse; font-size:0.78rem; font-family:var(--font-mono);">`);
+      const headerCells = tableRows[0].map(c => `<th style="background:#141417; color:#bef264; padding:0.5rem 0.75rem; border:1px solid #27272a; text-align:left; font-weight:700;">${formatInlineMarkdown(c.trim())}</th>`).join("");
       html.push(`<thead><tr>${headerCells}</tr></thead><tbody>`);
       for (let i = 1; i < tableRows.length; i++) {
-        const rowCells = tableRows[i].map(c => `<td>${formatInlineMarkdown(c.trim())}</td>`).join("");
+        const rowCells = tableRows[i].map(c => `<td style="padding:0.45rem 0.75rem; border:1px solid #27272a; color:#e4e4e7;">${formatInlineMarkdown(c.trim())}</td>`).join("");
         html.push(`<tr>${rowCells}</tr>`);
       }
       html.push(`</tbody></table></div>`);
@@ -248,18 +253,42 @@ function renderMarkdownReportToHtml(markdownText) {
 
     if (!line.trim()) continue;
 
-    if (line.startsWith("# ")) {
-      html.push(`<div class="report-header-banner" style="background:#18181b; border:1px solid #27272a; padding:0.75rem 1rem; border-radius:8px; margin-bottom:0.75rem;"><h2 style="margin:0 0 0.3rem 0; font-size:1.15rem; color:#ffffff;">${escapeHtml(line.slice(2))}</h2></div>`);
+    // Header banner
+    if (line.startsWith("# AUTOMATED CODE REVIEW REPORT: ")) {
+      const proj = line.replace("# AUTOMATED CODE REVIEW REPORT: ", "").trim();
+      html.push(`
+        <div style="background:#141417; border:1px solid #27272a; border-radius:8px; padding:0.85rem 1.15rem; margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div style="font-size:0.62rem; font-family:var(--font-mono); color:#a1a1aa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;">Automated Static Verification Report</div>
+            <h2 style="margin:0; font-size:1.15rem; color:#ffffff; font-weight:800; letter-spacing:-0.01em;">${escapeHtml(proj)}</h2>
+          </div>
+          <span class="pill-badge pill-zinc" style="font-size:0.72rem; font-family:var(--font-mono); font-weight:600;">Multi-Agent Engine</span>
+        </div>
+      `);
+    } else if (line.startsWith("# ")) {
+      html.push(`<h2 style="margin:0.85rem 0 0.4rem 0; font-size:1.15rem; color:#ffffff; font-weight:800;">${escapeHtml(line.slice(2))}</h2>`);
+    } else if (line.startsWith("## Executive Summary")) {
+      html.push(`<h3 style="margin:1rem 0 0.35rem 0; font-size:0.95rem; font-family:var(--font-mono); font-weight:700; color:#bef264; text-transform:uppercase; letter-spacing:0.05em;">🛡️ Executive Summary</h3>`);
+    } else if (line.startsWith("## 🚨 Defective Code Highlights")) {
+      html.push(`<h3 style="margin:1.25rem 0 0.35rem 0; font-size:1.0rem; font-weight:800; color:#f43f5e; border-bottom:1.5px solid rgba(244,63,94,0.3); padding-bottom:0.35rem;">🚨 Defective Code Highlights &amp; Explanations</h3>`);
+    } else if (line.startsWith("## 🛠️ Automated Remediation")) {
+      html.push(`<h3 style="margin:1.25rem 0 0.35rem 0; font-size:1.0rem; font-weight:800; color:#bef264; border-bottom:1.5px solid rgba(190,242,100,0.3); padding-bottom:0.35rem;">🛠️ Automated Remediation Unified Diff Patch</h3>`);
     } else if (line.startsWith("## ")) {
-      html.push(`<h3 style="margin:1rem 0 0.4rem 0; font-size:1.02rem; color:#bef264; border-bottom:1px solid #27272a; padding-bottom:4px;">${escapeHtml(line.slice(3))}</h3>`);
+      html.push(`<h3 style="margin:1rem 0 0.35rem 0; font-size:0.95rem; font-weight:700; color:#bef264; border-bottom:1px solid #27272a; padding-bottom:0.3rem;">${escapeHtml(line.slice(3))}</h3>`);
+    } else if (line.startsWith("### 🔴 ")) {
+      html.push(`<div style="margin-top:0.85rem; padding-top:0.5rem; border-top:1px dashed #27272a;"><h4 style="margin:0 0 0.35rem 0; font-size:0.92rem; color:#fda4af; font-weight:700;">${formatInlineMarkdown(line.slice(4))}</h4></div>`);
     } else if (line.startsWith("### ")) {
-      html.push(`<h4 style="margin:0.8rem 0 0.3rem 0; font-size:0.92rem; color:#fda4af;">${escapeHtml(line.slice(4))}</h4>`);
+      html.push(`<h4 style="margin:0.75rem 0 0.25rem 0; font-size:0.9rem; color:#f4f4f5; font-weight:700;">${formatInlineMarkdown(line.slice(4))}</h4>`);
     } else if (line.startsWith("> ")) {
-      html.push(`<blockquote style="margin:0.4rem 0; padding:0.6rem 1rem; border-left:3px solid #bef264; background:rgba(190, 242, 100, 0.08); border-radius:0 6px 6px 0; color:#d4d4d8; font-style:italic;">${formatInlineMarkdown(line.slice(2))}</blockquote>`);
+      html.push(`<blockquote style="margin:0.4rem 0; padding:0.65rem 1rem; border-left:3px solid #bef264; background:rgba(190, 242, 100, 0.08); border-radius:0 6px 6px 0; color:#f4f4f5; font-size:0.88rem; line-height:1.5; font-style:italic;">${formatInlineMarkdown(line.slice(2))}</blockquote>`);
     } else if (line.startsWith("- ")) {
-      html.push(`<div style="margin:0.2rem 0 0.2rem 0.5rem; display:flex; align-items:flex-start; gap:0.5rem;"><span style="color:#bef264;">&bull;</span> <span>${formatInlineMarkdown(line.slice(2))}</span></div>`);
+      html.push(`<div style="margin:0.25rem 0 0.25rem 0.5rem; display:flex; align-items:flex-start; gap:0.5rem; font-size:0.85rem;"><span style="color:#bef264; font-weight:bold;">&bull;</span> <span style="color:#d4d4d8;">${formatInlineMarkdown(line.slice(2))}</span></div>`);
+    } else if (line.startsWith("**❌ Offending / Defective Code Snippet:**")) {
+      html.push(`<div style="margin-top:0.5rem; font-weight:700; color:#f43f5e; font-size:0.82rem; letter-spacing:0.02em;">❌ Offending / Defective Code Snippet:</div>`);
+    } else if (line.startsWith("**💡 Recommended Fix:**")) {
+      html.push(`<div style="margin:0.4rem 0; padding:0.5rem 0.75rem; background:rgba(190,242,100,0.06); border:1px solid rgba(190,242,100,0.2); border-radius:6px; font-size:0.83rem; color:#e4e4e7;"><span style="font-weight:700; color:#bef264;">💡 Recommended Fix:</span> ${formatInlineMarkdown(line.replace("**💡 Recommended Fix:**", "").trim())}</div>`);
     } else {
-      html.push(`<p style="margin:0.35rem 0; color:#e4e4e7;">${formatInlineMarkdown(line)}</p>`);
+      html.push(`<p style="margin:0.3rem 0; color:#d4d4d8; font-size:0.85rem; line-height:1.55;">${formatInlineMarkdown(line)}</p>`);
     }
   }
 
@@ -303,12 +332,12 @@ function updateModalHeaderAndStats(review) {
   if (badge) {
     if (rec === "APPROVE") {
       badge.className = "badge-verdict verdict-approved";
-      badge.textContent = "✔ APPROVE";
+      badge.innerHTML = "&#x2714; APPROVE";
       badge.style.background = "#bef264";
       badge.style.color = "#000000";
     } else if (rec === "REQUEST_CHANGES") {
       badge.className = "badge-verdict verdict-changes";
-      badge.textContent = "⚠ REQUEST_CHANGES";
+      badge.innerHTML = "&#x26A0; REQUEST_CHANGES";
       badge.style.background = "#f43f5e";
       badge.style.color = "#ffffff";
     } else {
@@ -321,41 +350,34 @@ function updateModalHeaderAndStats(review) {
 
   if (statVerdict) {
     if (rec === "APPROVE") {
-      statVerdict.className = "report-stat-val text-lime";
-      statVerdict.textContent = "APPROVE (100% Green)";
+      statVerdict.innerHTML = `<span class="pill-badge pill-lime" style="font-size:0.75rem; font-weight:800; padding:3px 8px;">✔ APPROVE (Clean)</span>`;
     } else if (rec === "REQUEST_CHANGES") {
-      statVerdict.className = "report-stat-val text-crimson";
-      statVerdict.textContent = "REQUEST_CHANGES";
+      statVerdict.innerHTML = `<span class="pill-badge pill-crimson" style="font-size:0.72rem; font-weight:800; padding:3px 7px; letter-spacing:0.02em;">⚠ REQUEST_CHANGES</span>`;
     } else {
-      statVerdict.className = "report-stat-val";
-      statVerdict.textContent = rec;
+      statVerdict.innerHTML = `<span class="pill-badge pill-zinc" style="font-size:0.75rem; font-weight:800; padding:3px 8px;">${escapeHtml(rec)}</span>`;
     }
   }
 
   if (statFindings) {
     if (blocking.length === 0) {
-      statFindings.className = "report-stat-val text-lime";
-      statFindings.textContent = "0 Defects (Clean)";
+      statFindings.innerHTML = `<span class="text-lime" style="font-size:1.05rem; font-weight:800;">0</span> <span style="font-size:0.75rem; color:#bef264; font-weight:600; margin-left:4px;">Defects (Clean)</span>`;
     } else {
-      statFindings.className = "report-stat-val text-crimson";
-      statFindings.textContent = `${blocking.length} Blocking ${blocking.length === 1 ? 'Defect' : 'Defects'}`;
+      statFindings.innerHTML = `<span class="text-crimson" style="font-size:1.05rem; font-weight:800;">${blocking.length}</span> <span style="font-size:0.75rem; font-weight:700; color:#fda4af; margin-left:4px;">${blocking.length === 1 ? 'Defect' : 'Defects'} Blocking</span>`;
     }
   }
 
   if (statAgents) {
-    statAgents.textContent = "6 / 6 Active";
+    statAgents.innerHTML = `<span class="text-blue" style="font-size:1.05rem; font-weight:800;">6 / 6</span> <span style="font-size:0.75rem; font-weight:600; color:#93c5fd; margin-left:4px;">Active</span>`;
   }
 
   if (statRemediation) {
     if (patch) {
-      statRemediation.className = "report-stat-val text-lime";
-      statRemediation.textContent = patch.validation === "PASSED" ? "Dry-Run Verified" : "Patch Ready";
+      const valPassed = patch.validation === "PASSED";
+      statRemediation.innerHTML = `<span class="${valPassed ? 'text-lime' : 'text-amber'}" style="font-size:0.82rem; font-weight:800;">${valPassed ? '✔ Dry-Run Verified' : '⚡ Patch Ready'}</span>`;
     } else if (rec === "APPROVE") {
-      statRemediation.className = "report-stat-val text-lime";
-      statRemediation.textContent = "Verified Safe (Clean)";
+      statRemediation.innerHTML = `<span class="text-lime" style="font-size:0.82rem; font-weight:800;">✔ Verified Safe</span>`;
     } else {
-      statRemediation.className = "report-stat-val text-amber";
-      statRemediation.textContent = "Manual Review";
+      statRemediation.innerHTML = `<span class="text-amber" style="font-size:0.82rem; font-weight:800;">Manual Review</span>`;
     }
   }
 }

@@ -162,7 +162,7 @@ def get_review_report(review_id: str):
         f"# AUTOMATED CODE REVIEW REPORT: {review.get('project_name', 'Submitted Project')}",
         f"**Review ID:** `{review_id}`  ",
         f"**Consensus Recommendation:** **{review.get('recommendation', 'PENDING')}**  ",
-        f"**Status:** `{review.get('status', 'COMPLETED')}` &bull; **Mode:** `{review.get('review_mode', 'CHANGE_REVIEW')}`  ",
+        f"**Status:** `{review.get('status', 'COMPLETED')}` • **Mode:** `{review.get('review_mode', 'CHANGE_REVIEW')}`  ",
         "",
         "## Executive Summary",
         f"> {review.get('recommendation_rationale', 'No rationale recorded.')}",
